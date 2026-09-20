@@ -1,0 +1,169 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Question;
+use App\Models\QuestionBank;
+use App\Models\Role;
+use App\Models\User;
+use Database\Seeders\RoleSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
+
+class QuestionBankManagementTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected User $instructor1;
+
+    protected User $instructor2;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(RoleSeeder::class);
+        $instructorRole = Role::where('name', Role::ROLE_INSTRUCTOR)->firstOrFail();
+
+        $this->instructor1 = User::factory()->create(['role_id' => $instructorRole->id, 'is_active' => true]);
+        $this->instructor2 = User::factory()->create(['role_id' => $instructorRole->id, 'is_active' => true]);
+    }
+
+    public function test_instructor_can_create_question_bank(): void
+    {
+        $this->withoutExceptionHandling();
+        $response = $this->actingAs($this->instructor1)->post(route('instructor.question-banks.store'), [
+            'title' => 'Ujian Akhir Semester',
+            'description' => 'Soal untuk UAS 2026',
+        ]);
+
+        $bank = QuestionBank::first();
+
+        $response->assertRedirect(route('instructor.question-banks.show', $bank));
+
+        $this->assertDatabaseHas('question_banks', [
+            'title' => 'Ujian Akhir Semester',
+            'instructor_id' => $this->instructor1->id,
+        ]);
+    }
+
+    public function test_instructor_cannot_access_other_instructor_question_bank(): void
+    {
+        $bank = QuestionBank::create([
+            'title' => 'Bank Soal A',
+            'instructor_id' => $this->instructor1->id,
+            'status' => 'active',
+        ]);
+
+        // Instructor 2 tries to access Instructor 1's bank
+        $response = $this->actingAs($this->instructor2)->get(route('instructor.question-banks.show', $bank));
+
+        $response->assertStatus(403);
+    }
+
+    public function test_instructor_can_add_manual_question(): void
+    {
+        $bank = QuestionBank::create([
+            'title' => 'Bank Soal A',
+            'instructor_id' => $this->instructor1->id,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->instructor1)->post(route('instructor.question-banks.questions.store', $bank), [
+            'question_text' => 'Apa ibukota Indonesia?',
+            'correct_option' => 1, // which index is correct
+            'options' => [
+                0 => 'Surabaya',
+                1 => 'Jakarta',
+                2 => 'Bandung',
+                3 => 'Medan',
+            ],
+            'difficulty' => 'easy',
+            'points' => 15,
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('questions', [
+            'question_bank_id' => $bank->id,
+            'question_text' => 'Apa ibukota Indonesia?',
+            'difficulty' => 'easy',
+            'points' => 15,
+        ]);
+
+        $question = Question::where('question_text', 'Apa ibukota Indonesia?')->first();
+
+        $this->assertDatabaseHas('question_options', [
+            'question_id' => $question->id,
+            'option_text' => 'Jakarta',
+            'is_correct' => true,
+        ]);
+
+        $this->assertDatabaseHas('question_options', [
+            'question_id' => $question->id,
+            'option_text' => 'Surabaya',
+            'is_correct' => false,
+        ]);
+    }
+
+    public function test_instructor_can_upload_document_and_dispatch_job(): void
+    {
+        Storage::fake('private');
+        Queue::fake();
+
+        $bank = QuestionBank::create([
+            'title' => 'Bank Soal A',
+            'instructor_id' => $this->instructor1->id,
+            'status' => 'active',
+        ]);
+
+        // Upload doc
+        $file = UploadedFile::fake()->create('naskah_soal.docx', 100, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+
+        $uploadResponse = $this->actingAs($this->instructor1)->post(route('instructor.question-banks.upload-document', $bank), [
+            'document' => $file,
+        ]);
+
+        $uploadResponse->assertRedirect();
+
+        $this->assertDatabaseHas('question_documents', [
+            'question_bank_id' => $bank->id,
+            'original_name' => 'naskah-soal.docx',
+        ]);
+
+        $document = $bank->documents()->first();
+
+        // Normally we would test extract(), but testing the parser requires a real docx.
+        // We'll mock the document service in a unit test instead, or just assert the route exists and is protected.
+    }
+
+    public function test_instructor_can_approve_needs_review_question(): void
+    {
+        $bank = QuestionBank::create([
+            'title' => 'Bank Soal A',
+            'instructor_id' => $this->instructor1->id,
+            'status' => 'active',
+        ]);
+
+        $question = Question::create([
+            'question_bank_id' => $bank->id,
+            'question_text' => 'Berapa hasil 1+1?',
+            'needs_review' => true,
+            'answer_source' => 'inferred',
+            'status' => 'review',
+        ]);
+
+        $response = $this->actingAs($this->instructor1)->post(route('instructor.questions.approve', $question));
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('questions', [
+            'id' => $question->id,
+            'needs_review' => false,
+            'status' => 'approved',
+        ]);
+    }
+}

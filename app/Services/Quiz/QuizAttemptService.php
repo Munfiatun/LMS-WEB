@@ -1,0 +1,176 @@
+<?php
+
+namespace App\Services\Quiz;
+
+use App\Models\Quiz;
+use App\Models\QuizAnswer;
+use App\Models\QuizAttempt;
+use App\Models\QuizAttemptOption;
+use App\Models\QuizAttemptQuestion;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+class QuizAttemptService
+{
+    public function startAttempt(Quiz $quiz, User $student): QuizAttempt
+    {
+        // Validation rules
+        if ($quiz->status !== 'published') {
+            throw ValidationException::withMessages(['quiz' => 'Quiz is not published.']);
+        }
+
+        $activeAttempt = QuizAttempt::where('quiz_id', $quiz->id)
+            ->where('student_id', $student->id)
+            ->where('status', 'in_progress')
+            ->first();
+
+        if ($activeAttempt) {
+            return $activeAttempt;
+        }
+
+        $attemptsCount = QuizAttempt::where('quiz_id', $quiz->id)
+            ->where('student_id', $student->id)
+            ->count();
+
+        if ($attemptsCount >= $quiz->max_attempts) {
+            throw ValidationException::withMessages(['quiz' => 'Maximum attempts reached.']);
+        }
+
+        return DB::transaction(function () use ($quiz, $student) {
+            $startedAt = now();
+            $expiresAt = $quiz->duration_minutes ? $startedAt->copy()->addMinutes($quiz->duration_minutes) : $startedAt->copy()->addYears(100);
+
+            $attempt = QuizAttempt::create([
+                'quiz_id' => $quiz->id,
+                'student_id' => $student->id,
+                'started_at' => $startedAt,
+                'expires_at' => $expiresAt,
+                'status' => 'in_progress',
+            ]);
+
+            // Snapshotting questions
+            $questionsQuery = $quiz->questions();
+            if ($quiz->randomize_questions) {
+                $questionsQuery->inRandomOrder();
+            } else {
+                $questionsQuery->orderByPivot('order');
+            }
+            
+            // Limit to total_questions defined in quiz config
+            $questions = $questionsQuery->take($quiz->total_questions)->get();
+
+            $order = 1;
+            foreach ($questions as $question) {
+                $attemptQuestion = QuizAttemptQuestion::create([
+                    'attempt_id' => $attempt->id,
+                    'question_id' => $question->id,
+                    'order' => $order++,
+                ]);
+
+                $optionsQuery = $question->options();
+                if ($quiz->randomize_options) {
+                    $optionsQuery->inRandomOrder();
+                } else {
+                    $optionsQuery->orderBy('id');
+                }
+                
+                $options = $optionsQuery->get();
+                $optionOrder = 1;
+                foreach ($options as $option) {
+                    QuizAttemptOption::create([
+                        'attempt_question_id' => $attemptQuestion->id,
+                        'option_id' => $option->id,
+                        'order' => $optionOrder++,
+                    ]);
+                }
+            }
+
+            return $attempt;
+        });
+    }
+
+    /**
+     * @param array<int, int|null> $answers Array of [question_id => selected_option_id]
+     */
+    public function submitAttempt(QuizAttempt $attempt, array $answers): QuizAttempt
+    {
+        if ($attempt->status !== 'in_progress') {
+            throw ValidationException::withMessages(['attempt' => 'Attempt is already finished.']);
+        }
+
+        return DB::transaction(function () use ($attempt, $answers) {
+            $now = now();
+            
+            // Check Server-Authoritative Timer
+            if ($attempt->expires_at && $now->isAfter($attempt->expires_at)) {
+                $attempt->status = 'expired';
+            } else {
+                $attempt->status = 'submitted';
+            }
+
+            $attempt->submitted_at = $now;
+            $attempt->duration_seconds = $now->diffInSeconds($attempt->started_at);
+
+            $score = 0;
+            $correctCount = 0;
+            $wrongCount = 0;
+            
+            $maxPossibleScore = 0;
+
+            $attemptQuestions = $attempt->attemptQuestions()->with('question.options')->get();
+
+            foreach ($attemptQuestions as $attemptQuestion) {
+                $question = $attemptQuestion->question;
+                
+                // Determine points for this question from quiz_questions table
+                $quizQuestion = $attempt->quiz->quizQuestions()->where('question_id', $question->id)->first();
+                $points = $quizQuestion ? $quizQuestion->points : 10;
+                
+                $maxPossibleScore += $points;
+
+                $selectedOptionId = $answers[$question->id] ?? null;
+                $isCorrect = false;
+                $pointsEarned = 0;
+
+                if ($selectedOptionId) {
+                    $selectedOption = $question->options->where('id', $selectedOptionId)->first();
+                    if ($selectedOption && $selectedOption->is_correct) {
+                        $isCorrect = true;
+                        $pointsEarned = $points;
+                        $score += $points;
+                        $correctCount++;
+                    } else {
+                        $wrongCount++;
+                    }
+                } else {
+                    $wrongCount++;
+                }
+
+                QuizAnswer::updateOrCreate(
+                    [
+                        'attempt_id' => $attempt->id,
+                        'question_id' => $question->id,
+                    ],
+                    [
+                        'selected_option_id' => $selectedOptionId,
+                        'is_correct' => $isCorrect,
+                        'points_earned' => $pointsEarned,
+                        'answered_at' => $now,
+                    ]
+                );
+            }
+
+            $percentage = $maxPossibleScore > 0 ? ($score / $maxPossibleScore) * 100 : 0;
+            
+            $attempt->score = $score;
+            $attempt->percentage = $percentage;
+            $attempt->correct_count = $correctCount;
+            $attempt->wrong_count = $wrongCount;
+            
+            $attempt->save();
+
+            return $attempt;
+        });
+    }
+}
