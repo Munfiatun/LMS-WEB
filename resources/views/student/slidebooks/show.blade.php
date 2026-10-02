@@ -15,13 +15,27 @@
     {{-- Top Presentation Navigation Bar --}}
     <header class="p-4 md:px-8 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md flex items-center justify-between z-20">
         <div class="flex items-center gap-3">
-            <a href="{{ route('courses.show', $course->slug) }}" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors flex items-center gap-1 text-xs font-semibold">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                <span class="hidden sm:inline">Kembali ke Kursus</span>
-            </a>
-            <div class="border-l border-slate-800 pl-3">
-                <h1 class="text-xs sm:text-sm font-bold text-white truncate max-w-xs md:max-w-md">{{ $slidebook->title }}</h1>
-                <p class="text-[11px] text-slate-400 truncate">{{ $course->title }} &bull; {{ $material->title }}</p>
+            @if(isset($isPreview) && $isPreview)
+                <a href="{{ route('instructor.materials.slidebook.review', $material) }}" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors flex items-center gap-1 text-xs font-semibold">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                    <span class="hidden sm:inline">Tutup Preview</span>
+                </a>
+            @else
+                <a href="{{ route('student.courses.continue', $course) }}" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors flex items-center gap-1 text-xs font-semibold">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                    <span class="hidden sm:inline">Kembali ke Kursus</span>
+                </a>
+            @endif
+            <div class="border-l border-slate-800 pl-3 flex items-center gap-3">
+                <div>
+                    <h1 class="text-xs sm:text-sm font-bold text-white truncate max-w-xs md:max-w-md flex items-center gap-2">
+                        {{ $slidebook->title }}
+                        @if(isset($isPreview) && $isPreview)
+                            <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-900 bg-amber-400 rounded">Preview Siswa</span>
+                        @endif
+                    </h1>
+                    <p class="text-[11px] text-slate-400 truncate">{{ $course->title }} &bull; {{ $material->title }}</p>
+                </div>
             </div>
         </div>
 

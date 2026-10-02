@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Question;
 use App\Models\QuestionBank;
 use App\Models\QuestionOption;
+use App\Models\Quiz;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,9 +27,9 @@ class QuestionController extends Controller
             'difficulty' => ['required', 'in:easy,medium,hard'],
             'points' => ['required', 'integer', 'min:1'],
             'explanation' => ['nullable', 'string'],
-            'options' => ['required', 'array', 'min:2'],
-            'options.*' => ['required', 'string'],
-            'correct_option' => ['required', 'integer', 'min:0'],
+            'options' => ['required', 'array', 'list', 'min:2'],
+            'options.*' => ['required', 'string', 'distinct:ignore_case'],
+            'correct_option' => ['required', 'integer', 'min:0', 'max:'.(count($request->array('options')) - 1)],
         ]);
 
         DB::transaction(function () use ($questionBank, $validated): void {
@@ -75,9 +76,9 @@ class QuestionController extends Controller
             'difficulty' => ['required', 'in:easy,medium,hard'],
             'points' => ['required', 'integer', 'min:1'],
             'explanation' => ['nullable', 'string'],
-            'options' => ['required', 'array', 'min:2'],
-            'options.*' => ['required', 'string'],
-            'correct_option' => ['required', 'integer', 'min:0'],
+            'options' => ['required', 'array', 'list', 'min:2'],
+            'options.*' => ['required', 'string', 'distinct:ignore_case'],
+            'correct_option' => ['required', 'integer', 'min:0', 'max:'.(count($request->array('options')) - 1)],
         ]);
 
         DB::transaction(function () use ($question, $validated): void {
@@ -90,6 +91,9 @@ class QuestionController extends Controller
                 'needs_review' => false, // Review verified on manual edit
                 'status' => Question::STATUS_APPROVED,
             ]);
+
+            Quiz::whereHas('quizQuestions', fn ($query) => $query->where('question_id', $question->id))
+                ->update(['status' => 'draft', 'published_at' => null]);
 
             // Replace options
             $question->options()->delete();
@@ -117,6 +121,8 @@ class QuestionController extends Controller
 
         $bank = $question->questionBank;
         $order = $question->order;
+        Quiz::whereHas('quizQuestions', fn ($query) => $query->where('question_id', $question->id))
+            ->update(['status' => 'draft', 'published_at' => null]);
         $question->delete();
 
         // Re-order remaining questions

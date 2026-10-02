@@ -44,6 +44,7 @@ class GeminiProvider implements AIProviderInterface
             ],
             'generationConfig' => [
                 'responseMimeType' => 'application/json',
+                ...(($schemaDefinition['title'] ?? null) === 'quiz_generation' ? ['responseJsonSchema' => $schemaDefinition] : []),
             ],
         ]);
 

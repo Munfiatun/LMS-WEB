@@ -41,6 +41,27 @@ class SlidebookReviewController extends Controller
     }
 
     /**
+     * Preview the slidebook from the student's perspective.
+     */
+    public function preview(Request $request, Slidebook $slidebook): View
+    {
+        Gate::authorize('view', $slidebook);
+
+        $slidebook->load([
+            'slides' => fn ($q) => $q->orderBy('order'),
+            'material.section.course.instructor',
+        ]);
+
+        return view('student.slidebooks.show', [
+            'slidebook' => $slidebook,
+            'material' => $slidebook->material,
+            'course' => $slidebook->material->section->course,
+            'slides' => $slidebook->slides,
+            'isPreview' => true,
+        ]);
+    }
+
+    /**
      * Approve the Slidebook draft.
      */
     public function approve(Request $request, Slidebook $slidebook): RedirectResponse

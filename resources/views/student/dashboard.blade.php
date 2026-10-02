@@ -64,7 +64,7 @@
     </div>
 
     <!-- Continue Learning Section / Enrolled Courses -->
-    <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow">
+    <div id="my-courses" class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow">
         <div class="flex items-center justify-between mb-4">
             <div>
                 <h3 class="text-base font-bold text-white flex items-center gap-2">
@@ -88,7 +88,7 @@
                 @foreach($enrollments as $enrollment)
                     <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div class="flex-grow">
-                            <h4 class="text-lg font-bold text-white mb-1">{{ $enrollment->course->title }}</h4>
+                            <h4 class="text-lg font-bold text-white mb-1"><a href="{{ route('courses.show', $enrollment->course->slug) }}">{{ $enrollment->course->title }}</a></h4>
                             <p class="text-xs text-slate-400 mb-3">{{ $enrollment->course->category ? $enrollment->course->category->name : 'Uncategorized' }}</p>
                             
                             <!-- Progress Bar -->

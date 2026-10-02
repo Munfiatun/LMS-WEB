@@ -67,6 +67,7 @@
                     @auth
                         @if(auth()->user()->isStudent())
                             @if($isEnrolled)
+                                <p class="text-sm text-emerald-400">Progress: {{ number_format($enrollment->progress_percentage, 0) }}% Selesai</p>
                                 <a href="{{ route('student.courses.continue', $course) }}" class="w-full py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                     Lanjutkan Belajar
@@ -123,33 +124,46 @@
                     <div x-show="open" x-collapse class="border-t border-slate-800/60">
                         <div class="p-4 space-y-2">
                             @forelse($section->materials as $mat)
-                                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-950/40 border border-slate-800/40">
-                                    <span class="w-6 h-6 rounded bg-slate-800 text-slate-400 text-[11px] font-bold flex items-center justify-center flex-shrink-0">
-                                        {{ $mat->order }}
-                                    </span>
-                                    <div class="flex-1 min-w-0">
-                                        @if($isEnrolled)
-                                            <a href="{{ route('student.materials.show', [$course, $mat]) }}" class="text-sm font-medium text-white truncate hover:text-indigo-400 hover:underline block transition-colors">{{ $mat->title }}</a>
-                                        @else
-                                            <p class="text-sm font-medium text-white truncate">{{ $mat->title }}</p>
-                                        @endif
-                                        
-                                        @if($mat->description)
-                                            <p class="text-xs text-slate-500 truncate mt-0.5">{{ $mat->description }}</p>
-                                        @endif
-                                    </div>
-                                    @if($mat->slidebook && $mat->slidebook->isPublished())
-                                        <a href="{{ route('student.slidebooks.show', $mat->slidebook) }}"
-                                           class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 border border-indigo-500/30 transition-colors flex items-center gap-1 flex-shrink-0">
-                                            <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            Slidebook
-                                        </a>
+                                    @php
+                                        $targetUrl = '#';
+                                        if ($isEnrolled) {
+                                            $targetUrl = route('student.materials.show', [$course, $mat]);
+                                        }
+                                    @endphp
+                                    
+                                    @if($isEnrolled)
+                                        <a href="{{ $targetUrl }}" class="block group">
+                                            <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-950/40 border border-slate-800/40 group-hover:bg-slate-900/60 group-hover:border-slate-700 transition-all cursor-pointer">
+                                    @else
+                                        <div>
+                                            <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-950/40 border border-slate-800/40">
                                     @endif
-                                    <span class="text-[11px] text-slate-500 flex-shrink-0 flex items-center gap-1">
-                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        {{ $mat->duration_minutes }} min
-                                    </span>
-                                </div>
+                                            <span class="w-6 h-6 rounded bg-slate-800 text-slate-400 text-[11px] font-bold flex items-center justify-center flex-shrink-0">
+                                                {{ $mat->order }}
+                                            </span>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-white truncate {{ $isEnrolled ? 'group-hover:text-indigo-400 transition-colors' : '' }}">{{ $mat->title }}</p>
+                                                
+                                                @if($mat->description)
+                                                    <p class="text-xs text-slate-500 truncate mt-0.5">{{ $mat->description }}</p>
+                                                @endif
+                                            </div>
+                                            @if($mat->slidebook && $mat->slidebook->isPublished())
+                                                <span class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-1 flex-shrink-0">
+                                                    <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                    Slidebook
+                                                </span>
+                                            @endif
+                                            <span class="text-[11px] text-slate-500 flex-shrink-0 flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                {{ $mat->duration_minutes }} min
+                                            </span>
+                                        </div>
+                                    @if($isEnrolled)
+                                        </a>
+                                    @else
+                                        </div>
+                                    @endif
                             @empty
                                 <p class="text-center text-xs text-slate-500 py-4">Belum ada materi dalam bab ini.</p>
                             @endforelse

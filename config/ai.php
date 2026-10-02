@@ -29,6 +29,13 @@ return [
             'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
         ],
 
+        'groq' => [
+            'api_key' => env('GROQ_API_KEY'),
+            'model' => env('GROQ_MODEL', 'openai/gpt-oss-20b'),
+            'timeout' => (int) env('GROQ_TIMEOUT', 60),
+            'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+        ],
+
         'gemini' => [
             'api_key' => env('GEMINI_API_KEY'),
             'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
@@ -44,4 +51,16 @@ return [
     */
     'prompt_version' => env('AI_PROMPT_VERSION', 'v1.0'),
     'allow_external_knowledge' => env('AI_ALLOW_EXTERNAL_KNOWLEDGE', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Quiz AI Prompt – Extra Instructions (optional)
+    |--------------------------------------------------------------------------
+    |
+    | Global extra text appended to every AI Quiz generation prompt.
+    | Teachers can also add per-request instructions via the UI.
+    | Set via .env or leave empty to use the default prompt only.
+    |
+    */
+    'quiz_prompt_extra' => env('AI_QUIZ_PROMPT_EXTRA', ''),
 ];

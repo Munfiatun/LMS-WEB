@@ -7,17 +7,25 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Instructor\AIProcessController;
 use App\Http\Controllers\Instructor\AIQuestionExtractController;
+use App\Http\Controllers\Instructor\AIQuizController;
+use App\Http\Controllers\Instructor\AnalyticsController;
 use App\Http\Controllers\Instructor\CourseController as InstructorCourseController;
 use App\Http\Controllers\Instructor\DashboardController as InstructorDashboardController;
 use App\Http\Controllers\Instructor\MaterialController as InstructorMaterialController;
 use App\Http\Controllers\Instructor\MaterialDocumentController as InstructorMaterialDocumentController;
 use App\Http\Controllers\Instructor\QuestionBankController;
 use App\Http\Controllers\Instructor\QuestionController;
+use App\Http\Controllers\Instructor\QuizController;
+use App\Http\Controllers\Instructor\QuizResultController;
 use App\Http\Controllers\Instructor\SectionController as InstructorSectionController;
 use App\Http\Controllers\Instructor\SlidebookReviewController;
 use App\Http\Controllers\Instructor\SlideController;
 use App\Http\Controllers\Public\CourseCatalogController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
+use App\Http\Controllers\Student\EnrollmentController;
+use App\Http\Controllers\Student\MaterialController;
+use App\Http\Controllers\Student\ProgressController;
+use App\Http\Controllers\Student\QuizAttemptController;
 use App\Http\Controllers\Student\SlidebookViewerController;
 use Illuminate\Support\Facades\Route;
 
@@ -69,7 +77,7 @@ Route::middleware(['auth', 'role:instructor'])
         // Course CRUD
         Route::resource('courses', InstructorCourseController::class)->except(['show']);
         Route::post('/courses/{course}/publish', [InstructorCourseController::class, 'publish'])->name('courses.publish');
-        Route::get('/courses/{course}/analytics', [\App\Http\Controllers\Instructor\AnalyticsController::class, 'show'])->name('courses.analytics');
+        Route::get('/courses/{course}/analytics', [AnalyticsController::class, 'show'])->name('courses.analytics');
 
         // Sections
         Route::post('/courses/{course}/sections', [InstructorSectionController::class, 'store'])->name('sections.store');
@@ -91,6 +99,7 @@ Route::middleware(['auth', 'role:instructor'])
         Route::get('/materials/{material}/slidebook/review', [SlidebookReviewController::class, 'show'])->name('materials.slidebook.review');
         Route::post('/slidebooks/{slidebook}/approve', [SlidebookReviewController::class, 'approve'])->name('slidebooks.approve');
         Route::post('/slidebooks/{slidebook}/publish', [SlidebookReviewController::class, 'publish'])->name('slidebooks.publish');
+        Route::get('/slidebooks/{slidebook}/preview', [SlidebookReviewController::class, 'preview'])->name('slidebooks.preview');
 
         // Slide CRUD & Reordering
         Route::post('/slidebooks/{slidebook}/slides', [SlideController::class, 'store'])->name('slidebooks.slides.store');
@@ -111,13 +120,14 @@ Route::middleware(['auth', 'role:instructor'])
         Route::post('/question-banks/{question_bank}/upload-document', [AIQuestionExtractController::class, 'uploadDocument'])->name('question-banks.upload-document');
         Route::post('/question-banks/{question_bank}/extract', [AIQuestionExtractController::class, 'extract'])->name('question-banks.extract');
         Route::get('/question-banks/{question_bank}/review', [AIQuestionExtractController::class, 'review'])->name('question-banks.review');
-        
+
         // Quizzes
-        Route::resource('quizzes', \App\Http\Controllers\Instructor\QuizController::class)->except(['edit', 'update', 'destroy']);
-        Route::get('/quizzes/{quiz}/builder', [\App\Http\Controllers\Instructor\QuizController::class, 'builder'])->name('quizzes.builder');
-        Route::post('/quizzes/{quiz}/sync-questions', [\App\Http\Controllers\Instructor\QuizController::class, 'syncQuestions'])->name('quizzes.sync-questions');
-        Route::post('/quizzes/{quiz}/publish', [\App\Http\Controllers\Instructor\QuizController::class, 'publish'])->name('quizzes.publish');
-        Route::get('/quizzes/{quiz}/results', [\App\Http\Controllers\Instructor\QuizResultController::class, 'index'])->name('quizzes.results');
+        Route::post('/quizzes/generate-ai', [AIQuizController::class, 'store'])->name('quizzes.generate-ai')->middleware('throttle:5,1');
+        Route::resource('quizzes', QuizController::class)->except(['edit', 'update', 'destroy']);
+        Route::get('/quizzes/{quiz}/builder', [QuizController::class, 'builder'])->name('quizzes.builder');
+        Route::post('/quizzes/{quiz}/sync-questions', [QuizController::class, 'syncQuestions'])->name('quizzes.sync-questions');
+        Route::post('/quizzes/{quiz}/publish', [QuizController::class, 'publish'])->name('quizzes.publish');
+        Route::get('/quizzes/{quiz}/results', [QuizResultController::class, 'index'])->name('quizzes.results');
     });
 
 /*
@@ -140,17 +150,17 @@ Route::middleware(['auth', 'role:student'])
     ->group(function (): void {
         Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
         Route::get('/slidebooks/{slidebook}', [SlidebookViewerController::class, 'show'])->name('slidebooks.show');
-        
+
         // Enrollment & Progress
-        Route::post('/courses/{course}/enroll', [\App\Http\Controllers\Student\EnrollmentController::class, 'store'])->name('courses.enroll');
-        Route::get('/courses/{course}/continue', [\App\Http\Controllers\Student\EnrollmentController::class, 'continue'])->name('courses.continue');
-        Route::post('/materials/{material}/complete', [\App\Http\Controllers\Student\ProgressController::class, 'complete'])->name('materials.complete');
-        Route::get('/courses/{course}/materials/{material}', [\App\Http\Controllers\Student\MaterialController::class, 'show'])->name('materials.show');
-        
+        Route::post('/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('courses.enroll');
+        Route::get('/courses/{course}/continue', [EnrollmentController::class, 'continue'])->name('courses.continue');
+        Route::post('/materials/{material}/complete', [ProgressController::class, 'complete'])->name('materials.complete');
+        Route::get('/courses/{course}/materials/{material}', [MaterialController::class, 'show'])->name('materials.show');
+
         // Quizzes
-        Route::get('/quizzes/{quiz}', [\App\Http\Controllers\Student\QuizAttemptController::class, 'show'])->name('quizzes.show');
-        Route::post('/quizzes/{quiz}/start', [\App\Http\Controllers\Student\QuizAttemptController::class, 'start'])->name('quizzes.start');
-        Route::get('/quizzes/{quiz}/attempt/{attempt}', [\App\Http\Controllers\Student\QuizAttemptController::class, 'take'])->name('quizzes.take');
-        Route::post('/quizzes/{quiz}/attempt/{attempt}', [\App\Http\Controllers\Student\QuizAttemptController::class, 'submit'])->name('quizzes.submit')->middleware('throttle:10,1');
-        Route::get('/quizzes/{quiz}/attempt/{attempt}/result', [\App\Http\Controllers\Student\QuizAttemptController::class, 'result'])->name('quizzes.result');
+        Route::get('/quizzes/{quiz}', [QuizAttemptController::class, 'show'])->name('quizzes.show');
+        Route::post('/quizzes/{quiz}/start', [QuizAttemptController::class, 'start'])->name('quizzes.start');
+        Route::get('/quizzes/{quiz}/attempt/{attempt}', [QuizAttemptController::class, 'take'])->name('quizzes.take');
+        Route::post('/quizzes/{quiz}/attempt/{attempt}', [QuizAttemptController::class, 'submit'])->name('quizzes.submit')->middleware('throttle:10,1');
+        Route::get('/quizzes/{quiz}/attempt/{attempt}/result', [QuizAttemptController::class, 'result'])->name('quizzes.result');
     });

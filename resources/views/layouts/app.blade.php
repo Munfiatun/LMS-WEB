@@ -140,7 +140,7 @@
                     Portal Siswa
                 </a>
                 <div class="px-3 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Pembelajaran</div>
-                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg text-slate-400 hover:bg-slate-800/40 hover:text-slate-300 transition-colors">
+                <a href="{{ route('student.dashboard') }}#my-courses" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg text-slate-400 hover:bg-slate-800/40 hover:text-slate-300 transition-colors">
                     <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                     Kursus Saya
                 </a>

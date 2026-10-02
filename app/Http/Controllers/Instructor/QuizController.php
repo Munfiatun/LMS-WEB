@@ -4,17 +4,18 @@ namespace App\Http\Controllers\Instructor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
-use App\Models\Quiz;
 use App\Models\QuestionBank;
+use App\Models\Quiz;
+use App\Models\QuizQuestion;
+use App\Models\Slidebook;
 use App\Services\Quiz\QuizService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class QuizController extends Controller
 {
-    public function __construct(private QuizService $quizService)
-    {
-    }
+    public function __construct(private QuizService $quizService) {}
 
     public function index()
     {
@@ -22,16 +23,18 @@ class QuizController extends Controller
         $quizzes = Quiz::whereHas('course', function ($q) {
             $q->where('instructor_id', auth()->id());
         })->with('course')->latest()->paginate(10);
-        
+
         $courses = Course::where('instructor_id', auth()->id())->get();
 
-        return view('instructor.quizzes.index', compact('quizzes', 'courses'));
+        $slidebooks = Slidebook::whereHas('material.section.course', fn ($query) => $query->where('instructor_id', auth()->id()))->orderBy('title')->get();
+
+        return view('instructor.quizzes.index', compact('quizzes', 'courses', 'slidebooks'));
     }
 
     public function store(Request $request)
     {
         Gate::authorize('create', Quiz::class);
-        
+
         $validated = $request->validate([
             'course_id' => ['required', 'exists:courses,id'],
             'section_id' => ['nullable', 'exists:course_sections,id'],
@@ -47,8 +50,8 @@ class QuizController extends Controller
         ]);
 
         $course = Course::findOrFail($validated['course_id']);
-        
-        if ($course->instructor_id !== auth()->id() && !auth()->user()->isAdmin()) {
+
+        if ($course->instructor_id !== auth()->id() && ! auth()->user()->isAdmin()) {
             abort(403);
         }
 
@@ -60,7 +63,8 @@ class QuizController extends Controller
     public function show(Quiz $quiz)
     {
         Gate::authorize('view', $quiz);
-        $quiz->load(['quizQuestions.question', 'course']);
+        $quiz->load(['quizQuestions.question.options', 'quizQuestions.question.questionBank', 'course']);
+
         return view('instructor.quizzes.show', compact('quiz'));
     }
 
@@ -68,22 +72,29 @@ class QuizController extends Controller
     {
         Gate::authorize('update', $quiz);
         $quiz->load(['quizQuestions.question']);
-        
+
         $questionBanks = QuestionBank::where('instructor_id', auth()->id())
-            ->with(['questions' => function($q) {
+            ->with(['questions' => function ($q) {
                 $q->where('needs_review', false);
             }])->get();
 
-        return view('instructor.quizzes.builder', compact('quiz', 'questionBanks'));
+        $selectedQuestions = $quiz->quizQuestions->map(fn (QuizQuestion $quizQuestion): array => [
+            'id' => $quizQuestion->question_id,
+            'text' => strip_tags($quizQuestion->question->question_text),
+            'type' => $quizQuestion->question->type,
+            'points' => $quizQuestion->points,
+        ]);
+
+        return view('instructor.quizzes.builder', compact('quiz', 'questionBanks', 'selectedQuestions'));
     }
 
     public function syncQuestions(Request $request, Quiz $quiz)
     {
         Gate::authorize('update', $quiz);
-        
+
         $validated = $request->validate([
             'questions' => ['required', 'array'],
-            'questions.*.id' => ['required', 'exists:questions,id'],
+            'questions.*.id' => ['required', 'distinct', Rule::exists('questions', 'id')->whereIn('question_bank_id', QuestionBank::where('instructor_id', auth()->id())->select('id'))],
             'questions.*.points' => ['required', 'integer', 'min:1'],
             'questions.*.order' => ['required', 'integer', 'min:1'],
         ]);
@@ -96,12 +107,13 @@ class QuizController extends Controller
     public function publish(Quiz $quiz)
     {
         Gate::authorize('update', $quiz);
-        
+
         if ($quiz->quizQuestions()->count() < $quiz->total_questions) {
-            return back()->with('error', "Jumlah soal yang dipilih (" . $quiz->quizQuestions()->count() . ") masih kurang dari target total soal ({$quiz->total_questions}).");
+            return back()->with('error', 'Jumlah soal yang dipilih ('.$quiz->quizQuestions()->count().") masih kurang dari target total soal ({$quiz->total_questions}).");
         }
-        
+
         $this->quizService->publishQuiz($quiz);
+
         return back()->with('success', 'Kuis berhasil diterbitkan.');
     }
 }

@@ -1,6 +1,13 @@
 @extends('layouts.app')
 
 @section('content')
+@if($errors->any())
+    <div role="alert" class="p-4 mb-4 rounded-lg bg-red-100 text-red-800">
+        @foreach($errors->all() as $error)
+            <p>{{ $error }}</p>
+        @endforeach
+    </div>
+@endif
 <div class="py-12" x-data="quizBuilder()">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="mb-6 flex justify-between items-center">
@@ -50,7 +57,7 @@
                                 <div class="p-4 flex items-start gap-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
                                     <div class="flex-grow">
                                         <div class="text-sm text-gray-900 dark:text-gray-100 line-clamp-2 mb-2">
-                                            {!! strip_tags($question->question_text) !!}
+                                            {{ strip_tags($question->question_text) }}
                                         </div>
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
                                             {{ $question->type }}
@@ -113,15 +120,8 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('quizBuilder', () => ({
-        selectedQuestions: @json($quiz->quizQuestions->map(function($qq) {
-            return [
-                'id' => $qq->question_id,
-                'text' => strip_tags($qq->question->question_text),
-                'type' => $qq->question->type,
-                'points' => $qq->points,
-            ];
-        })),
-        
+        selectedQuestions: {{ \Illuminate\Support\Js::from($selectedQuestions) }},
+
         isSelected(id) {
             return this.selectedQuestions.some(q => q.id === id);
         },

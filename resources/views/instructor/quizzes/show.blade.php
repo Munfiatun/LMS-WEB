@@ -1,6 +1,13 @@
 @extends('layouts.app')
 
 @section('content')
+@if($errors->any())
+    <div role="alert" class="p-4 mb-4 rounded-lg bg-red-100 text-red-800">
+        @foreach($errors->all() as $error)
+            <p>{{ $error }}</p>
+        @endforeach
+    </div>
+@endif
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
         <!-- Header & Detail -->
@@ -54,6 +61,19 @@
                 </div>
             </div>
         </div>
+
+        @if($quiz->status === 'draft')
+            <div class="p-6 bg-white dark:bg-gray-800 rounded-xl space-y-4">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Review Quiz</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Periksa dan simpan setiap soal untuk memverifikasi jawabannya. Gunakan Builder untuk menghapus atau memilih soal, lalu Terbitkan Kuis setelah selesai.</p>
+                @foreach($quiz->quizQuestions->pluck('question.questionBank')->unique('id') as $bank)
+                    <a href="{{ route('instructor.question-banks.show', $bank) }}" class="block text-indigo-500">Tambah soal manual ke {{ $bank->title }}, lalu pilih melalui Builder</a>
+                @endforeach
+                @foreach($quiz->quizQuestions as $quizQuestion)
+                    @include('instructor.quizzes.question-review', ['question' => $quizQuestion->question])
+                @endforeach
+            </div>
+        @endif
 
         <!-- Daftar Soal Tersinkronisasi -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">

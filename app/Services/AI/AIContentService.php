@@ -6,6 +6,7 @@ use App\Models\AIProcessingLog;
 use App\Models\AIProcessingResult;
 use App\Services\AI\Contracts\AIProviderInterface;
 use App\Services\AI\Providers\GeminiProvider;
+use App\Services\AI\Providers\GroqProvider;
 use App\Services\AI\Providers\MockAIProvider;
 use App\Services\AI\Providers\OpenAIProvider;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +26,7 @@ class AIContentService
             'mock' => new MockAIProvider,
             'openai' => new OpenAIProvider,
             'gemini' => new GeminiProvider,
+            'groq' => new GroqProvider,
             default => throw new InvalidArgumentException("Unsupported AI provider: {$provider}"),
         };
     }

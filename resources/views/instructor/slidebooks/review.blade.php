@@ -33,6 +33,9 @@
 
             {{-- Action Buttons --}}
             <div class="flex flex-wrap items-center gap-2.5">
+                @can('create', \App\Models\Quiz::class)
+                    <a href="{{ route('instructor.quizzes.index', ['slidebook_id' => $slidebook->id]) }}" class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors">Generate Quiz with AI</a>
+                @endcan
                 {{-- Regenerate Form --}}
                 <form action="{{ route('instructor.materials.ai.slidebook', $material) }}" method="POST" onsubmit="return confirm('Regenerate akan membuat versi slidebook baru dari dokumen sumber. Lanjutkan?')">
                     @csrf
@@ -63,8 +66,8 @@
                     </button>
                 </form>
 
-                @if($slidebook->status === 'published')
-                    <a href="{{ route('student.slidebooks.show', $slidebook) }}" target="_blank" class="px-3 py-2 text-xs font-semibold rounded-xl bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-200 border border-indigo-500/40 transition-colors flex items-center gap-1.5">
+                @if($slidebook->status === 'published' || $slidebook->status === 'draft')
+                    <a href="{{ route('instructor.slidebooks.preview', $slidebook) }}" target="_blank" class="px-3 py-2 text-xs font-semibold rounded-xl bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-200 border border-indigo-500/40 transition-colors flex items-center gap-1.5">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                         Preview Siswa
                     </a>

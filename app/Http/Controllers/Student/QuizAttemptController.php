@@ -15,19 +15,18 @@ class QuizAttemptController extends Controller
     public function __construct(
         private QuizAttemptService $quizAttemptService,
         private EnrollmentService $enrollmentService
-    ) {
-    }
+    ) {}
 
     public function show(Quiz $quiz)
     {
         Gate::authorize('view', $quiz);
-        
+
         $this->enrollmentService->setLastAccessed($quiz->course, auth()->user(), quiz: $quiz);
 
         $attemptsCount = QuizAttempt::where('quiz_id', $quiz->id)
             ->where('student_id', auth()->id())
             ->count();
-            
+
         $activeAttempt = QuizAttempt::where('quiz_id', $quiz->id)
             ->where('student_id', auth()->id())
             ->where('status', 'in_progress')
@@ -43,6 +42,7 @@ class QuizAttemptController extends Controller
 
         try {
             $attempt = $this->quizAttemptService->startAttempt($quiz, auth()->user());
+
             return redirect()->route('student.quizzes.take', ['quiz' => $quiz->id, 'attempt' => $attempt->id]);
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -52,6 +52,7 @@ class QuizAttemptController extends Controller
     public function take(Quiz $quiz, QuizAttempt $attempt)
     {
         Gate::authorize('view', $quiz);
+        abort_unless($attempt->quiz_id === $quiz->id, 404);
         Gate::authorize('update', $attempt);
 
         if ($attempt->status !== 'in_progress') {
@@ -66,8 +67,10 @@ class QuizAttemptController extends Controller
 
     public function submit(Request $request, Quiz $quiz, QuizAttempt $attempt)
     {
+        Gate::authorize('view', $quiz);
+        abort_unless($attempt->quiz_id === $quiz->id, 404);
         Gate::authorize('update', $attempt);
-        
+
         $validated = $request->validate([
             'answers' => ['array'],
             'answers.*' => ['nullable', 'exists:question_options,id'],
@@ -75,7 +78,7 @@ class QuizAttemptController extends Controller
 
         try {
             $this->quizAttemptService->submitAttempt($attempt, $validated['answers'] ?? []);
-            
+
             // Perbarui progress pendaftaran kursus
             $this->enrollmentService->updateProgress($quiz->course, auth()->user());
 
@@ -88,8 +91,11 @@ class QuizAttemptController extends Controller
 
     public function result(Quiz $quiz, QuizAttempt $attempt)
     {
+        Gate::authorize('view', $quiz);
+        abort_unless($attempt->quiz_id === $quiz->id, 404);
         Gate::authorize('view', $attempt);
-        
+        abort_if($attempt->status === 'in_progress', 403);
+
         return view('student.quizzes.result', compact('quiz', 'attempt'));
     }
 }

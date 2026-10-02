@@ -6,7 +6,7 @@ use App\Services\AI\Contracts\AIProviderInterface;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
-class OpenAIProvider implements AIProviderInterface
+class GroqProvider implements AIProviderInterface
 {
     protected string $apiKey;
 
@@ -18,19 +18,21 @@ class OpenAIProvider implements AIProviderInterface
 
     public function __construct()
     {
-        $this->apiKey = (string) config('ai.providers.openai.api_key');
-        $this->model = (string) config('ai.providers.openai.model', 'gpt-4o-mini');
-        $this->timeout = (int) config('ai.providers.openai.timeout', 60);
-        $this->baseUrl = rtrim((string) config('ai.providers.openai.base_url', 'https://api.openai.com/v1'), '/');
+        $this->apiKey = (string) config('ai.providers.groq.api_key');
+        $this->model = (string) config('ai.providers.groq.model', 'openai/gpt-oss-20b');
+        $this->timeout = (int) config('ai.providers.groq.timeout', 60);
+        $this->baseUrl = rtrim((string) config('ai.providers.groq.base_url', 'https://api.groq.com/openai/v1'), '/');
     }
 
     public function generateStructuredData(string $systemPrompt, string $userContent, array $schemaDefinition): array
     {
         if (empty($this->apiKey)) {
-            throw new RuntimeException('OpenAI API key is missing. Set OPENAI_API_KEY in .env or switch AI_PROVIDER to mock.');
+            throw new RuntimeException('Groq API key is missing. Set GROQ_API_KEY in .env or switch AI_PROVIDER to mock.');
         }
 
-        $systemPromptWithJson = $systemPrompt."\nIMPORTANT: You must respond with pure, valid JSON strictly adhering to the requested schema. Do not enclose JSON in markdown code fences.";
+        $schemaJson = json_encode($schemaDefinition, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $systemPromptWithJson = $systemPrompt."\n\nIMPORTANT: You must respond with pure, valid JSON strictly adhering to the following JSON Schema:\n
+$schemaJson\n\nDo not enclose JSON in markdown code fences.";
 
         $response = Http::withToken($this->apiKey)
             ->timeout($this->timeout)
@@ -40,13 +42,11 @@ class OpenAIProvider implements AIProviderInterface
                     ['role' => 'system', 'content' => $systemPromptWithJson],
                     ['role' => 'user', 'content' => $userContent],
                 ],
-                'response_format' => ($schemaDefinition['title'] ?? null) === 'quiz_generation'
-                    ? ['type' => 'json_schema', 'json_schema' => ['name' => 'quiz_generation', 'strict' => true, 'schema' => $schemaDefinition]]
-                    : ['type' => 'json_object'],
+                'response_format' => ['type' => 'json_object'],
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException("OpenAI API error: HTTP {$response->status()} - {$response->body()}");
+            throw new RuntimeException("Groq API error: HTTP {$response->status()} - {$response->body()}");
         }
 
         $responseData = $response->json();
@@ -55,7 +55,7 @@ class OpenAIProvider implements AIProviderInterface
 
         $parsed = json_decode($content, true);
         if (! is_array($parsed)) {
-            throw new RuntimeException('OpenAI response could not be decoded into a valid JSON array');
+            throw new RuntimeException('Groq response could not be decoded into a valid JSON array');
         }
 
         return [
@@ -67,7 +67,7 @@ class OpenAIProvider implements AIProviderInterface
 
     public function getProviderName(): string
     {
-        return 'openai';
+        return 'groq';
     }
 
     public function getModelName(): string

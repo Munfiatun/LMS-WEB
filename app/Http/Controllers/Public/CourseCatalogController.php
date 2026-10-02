@@ -47,11 +47,13 @@ class CourseCatalogController extends Controller
             ])
             ->firstOrFail();
 
+        $enrollment = null;
         $isEnrolled = false;
         if (auth()->check() && auth()->user()->isStudent()) {
-            $isEnrolled = $course->enrollments()->where('student_id', auth()->id())->exists();
+            $enrollment = $course->enrollments()->where('student_id', auth()->id())->first();
+            $isEnrolled = $enrollment !== null;
         }
 
-        return view('public.courses.show', compact('course', 'isEnrolled'));
+        return view('public.courses.show', compact('course', 'isEnrolled', 'enrollment'));
     }
 }
