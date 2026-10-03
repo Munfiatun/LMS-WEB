@@ -36,7 +36,7 @@ class RegisterController extends Controller
             }
         }
 
-        $roleName = match($request->role) {
+        $roleName = match ($request->role) {
             'admin' => Role::ROLE_ADMIN,
             'instructor' => Role::ROLE_INSTRUCTOR,
             default => Role::ROLE_STUDENT,

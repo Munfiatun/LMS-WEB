@@ -1,0 +1,1032 @@
+[
+  {
+    "title": "Pengenalan Pemrograman Web",
+    "description": "Memahami browser, server, URL, dan cara kerja aplikasi web.",
+    "questions": [
+      {
+        "question": "Apa tugas browser dalam aplikasi web?",
+        "correct": "Menampilkan halaman web kepada pengguna",
+        "distractors": [
+          "Menyimpan seluruh database server",
+          "Mengganti fungsi DNS",
+          "Mengompilasi seluruh kode PHP"
+        ],
+        "explanation": "Browser meminta sumber daya lalu menampilkan halaman kepada pengguna."
+      },
+      {
+        "question": "Apa fungsi server web?",
+        "correct": "Menerima request dan mengirim response",
+        "distractors": [
+          "Menggambar ikon desktop pengguna",
+          "Menggantikan semua browser",
+          "Mendesain warna monitor"
+        ],
+        "explanation": "Server web menerima request HTTP dan mengembalikan response."
+      },
+      {
+        "question": "Manakah yang termasuk pekerjaan frontend?",
+        "correct": "Membuat tampilan tombol pada halaman",
+        "distractors": [
+          "Mengatur backup database server",
+          "Mengelola proses antrean server",
+          "Menyimpan kunci rahasia server"
+        ],
+        "explanation": "Frontend menangani antarmuka yang berinteraksi langsung dengan pengguna."
+      },
+      {
+        "question": "Manakah yang termasuk pekerjaan backend?",
+        "correct": "Memvalidasi data dan menyimpannya ke database",
+        "distractors": [
+          "Mengatur ukuran font di browser",
+          "Memilih warna tombol dengan CSS",
+          "Menggambar border kartu dengan CSS"
+        ],
+        "explanation": "Backend menjalankan logika aplikasi dan mengelola data di server."
+      },
+      {
+        "question": "Apa fungsi utama HTML?",
+        "correct": "Menyusun struktur dan makna halaman",
+        "distractors": [
+          "Mengatur koneksi database",
+          "Mengubah alamat IP server",
+          "Mengelola sistem operasi"
+        ],
+        "explanation": "HTML memberikan struktur dan makna pada konten halaman web."
+      },
+      {
+        "question": "Apa fungsi utama CSS?",
+        "correct": "Mengatur tampilan halaman web",
+        "distractors": [
+          "Menyimpan kata sandi pengguna",
+          "Menerjemahkan domain menjadi IP",
+          "Menjalankan query database"
+        ],
+        "explanation": "CSS mengatur warna, ukuran, jarak, dan tata letak elemen."
+      },
+      {
+        "question": "Apa kegunaan JavaScript di browser?",
+        "correct": "Menambahkan perilaku interaktif",
+        "distractors": [
+          "Menjamin server selalu tersedia",
+          "Menggantikan protokol HTTPS",
+          "Mengatur partisi hard disk server"
+        ],
+        "explanation": "JavaScript memungkinkan halaman merespons tindakan pengguna secara dinamis."
+      },
+      {
+        "question": "Apa fungsi URL?",
+        "correct": "Menunjukkan alamat sumber daya web",
+        "distractors": [
+          "Menentukan warna halaman",
+          "Menyimpan isi seluruh database",
+          "Mengukur kecepatan mengetik"
+        ],
+        "explanation": "URL menunjukkan lokasi sumber daya seperti halaman atau gambar."
+      },
+      {
+        "question": "Pada https://contoh.test/belajar, bagian manakah nama host?",
+        "correct": "contoh.test",
+        "distractors": [
+          "https",
+          "/belajar",
+          "://"
+        ],
+        "explanation": "Nama host pada contoh URL tersebut adalah contoh.test."
+      },
+      {
+        "question": "Apa fungsi DNS?",
+        "correct": "Menerjemahkan nama domain menjadi alamat IP",
+        "distractors": [
+          "Mengubah HTML menjadi CSS",
+          "Menyimpan sesi browser selamanya",
+          "Menghapus cache setiap detik"
+        ],
+        "explanation": "DNS membantu menemukan alamat IP yang terkait dengan nama domain."
+      },
+      {
+        "question": "Apa perbedaan utama HTTPS terhadap HTTP?",
+        "correct": "Komunikasinya dilindungi enkripsi TLS",
+        "distractors": [
+          "Selalu menghilangkan semua bug",
+          "Tidak memerlukan server",
+          "Hanya dapat mengirim gambar"
+        ],
+        "explanation": "HTTPS menggunakan TLS untuk melindungi komunikasi antara klien dan server."
+      },
+      {
+        "question": "Urutan sederhana mana yang benar saat membuka halaman?",
+        "correct": "Browser mengirim request lalu server mengirim response",
+        "distractors": [
+          "Server selalu menerima response sebelum request",
+          "Database menggambar halaman tanpa browser",
+          "CSS mengirim halaman sebelum URL dipilih"
+        ],
+        "explanation": "Interaksi web umumnya dimulai dari request klien yang diikuti response server."
+      },
+      {
+        "question": "Apa arti status HTTP 200 pada request yang berhasil?",
+        "correct": "Request berhasil diproses",
+        "distractors": [
+          "Halaman tidak ditemukan",
+          "Akses selalu dilarang",
+          "Server sedang rusak"
+        ],
+        "explanation": "HTTP 200 menunjukkan bahwa request berhasil diproses."
+      },
+      {
+        "question": "Apa arti status HTTP 404?",
+        "correct": "Sumber daya tidak ditemukan",
+        "distractors": [
+          "Login pasti berhasil",
+          "Data berhasil dibuat",
+          "Koneksi selalu terenkripsi"
+        ],
+        "explanation": "HTTP 404 menandakan sumber daya yang diminta tidak ditemukan."
+      },
+      {
+        "question": "Apa arti localhost saat pengembangan?",
+        "correct": "Komputer tempat aplikasi sedang diakses",
+        "distractors": [
+          "Nama semua server publik",
+          "Domain untuk semua database",
+          "Layanan email universal"
+        ],
+        "explanation": "Localhost merujuk ke komputer lokal yang digunakan dalam pengembangan."
+      },
+      {
+        "question": "Apa fungsi editor kode?",
+        "correct": "Membantu menulis dan mengubah kode sumber",
+        "distractors": [
+          "Menggantikan seluruh koneksi internet",
+          "Menjadi satu-satunya server DNS",
+          "Menentukan harga domain otomatis"
+        ],
+        "explanation": "Editor kode membantu pengembang menulis dan mengelola kode sumber."
+      },
+      {
+        "question": "Apa manfaat version control seperti Git?",
+        "correct": "Mencatat perubahan kode",
+        "distractors": [
+          "Mempercepat layar monitor",
+          "Menggantikan HTML pada browser",
+          "Menambah kapasitas RAM otomatis"
+        ],
+        "explanation": "Version control mencatat riwayat perubahan dan membantu kolaborasi kode."
+      },
+      {
+        "question": "Apa yang dimaksud desain responsif?",
+        "correct": "Tampilan menyesuaikan ukuran layar",
+        "distractors": [
+          "Halaman hanya berjalan di desktop",
+          "Semua elemen harus berukuran tetap",
+          "Server selalu merespons tanpa jaringan"
+        ],
+        "explanation": "Desain responsif menyesuaikan tata letak dengan ukuran layar perangkat."
+      },
+      {
+        "question": "Apa fungsi database dalam aplikasi LMS?",
+        "correct": "Menyimpan data seperti materi dan pengguna",
+        "distractors": [
+          "Mengatur warna paragraf langsung",
+          "Menggantikan semua route aplikasi",
+          "Menentukan ukuran jendela browser"
+        ],
+        "explanation": "Database menyimpan data terstruktur seperti pengguna, materi, dan nilai."
+      },
+      {
+        "question": "Apa tujuan deployment aplikasi web?",
+        "correct": "Menempatkan aplikasi pada lingkungan yang dapat diakses pengguna",
+        "distractors": [
+          "Menghapus semua kode sumber",
+          "Mengganti seluruh soal menjadi gambar",
+          "Mematikan server setelah pengujian"
+        ],
+        "explanation": "Deployment menempatkan aplikasi ke lingkungan yang dapat diakses pengguna."
+      }
+    ]
+  },
+  {
+    "title": "Dasar HTML dan Struktur Halaman",
+    "description": "Mempelajari struktur dokumen, elemen semantik, tautan, gambar, tabel, dan formulir.",
+    "questions": [
+      {
+        "question": "Apa tujuan deklarasi !DOCTYPE html?",
+        "correct": "Menyatakan penggunaan dokumen HTML modern",
+        "distractors": [
+          "Membuat judul tab browser",
+          "Memuat file CSS otomatis",
+          "Menjalankan kode database"
+        ],
+        "explanation": "Deklarasi doctype membantu browser menggunakan mode standar untuk HTML."
+      },
+      {
+        "question": "Elemen manakah akar dokumen HTML?",
+        "correct": "html",
+        "distractors": [
+          "p",
+          "a",
+          "img"
+        ],
+        "explanation": "Elemen html membungkus struktur utama dokumen HTML."
+      },
+      {
+        "question": "Apa isi umum elemen head?",
+        "correct": "Metadata dan referensi sumber daya",
+        "distractors": [
+          "Semua tombol utama yang terlihat",
+          "Hanya daftar nilai siswa",
+          "Seluruh isi tabel materi"
+        ],
+        "explanation": "Elemen head memuat metadata seperti title dan referensi stylesheet."
+      },
+      {
+        "question": "Apa fungsi elemen body?",
+        "correct": "Menampung konten utama yang ditampilkan",
+        "distractors": [
+          "Menentukan alamat IP server",
+          "Menyimpan kata sandi terenkripsi",
+          "Menggantikan deklarasi doctype"
+        ],
+        "explanation": "Elemen body menampung konten halaman yang ditampilkan browser."
+      },
+      {
+        "question": "Elemen apa yang menentukan judul tab browser?",
+        "correct": "title",
+        "distractors": [
+          "footer",
+          "section",
+          "strong"
+        ],
+        "explanation": "Elemen title menentukan judul dokumen yang terlihat pada tab browser."
+      },
+      {
+        "question": "Apa tujuan meta charset=\"UTF-8\"?",
+        "correct": "Menentukan encoding karakter",
+        "distractors": [
+          "Membuat tombol submit",
+          "Mengatur lebar semua gambar",
+          "Membuat hyperlink"
+        ],
+        "explanation": "UTF-8 membantu dokumen menampilkan karakter dari berbagai bahasa."
+      },
+      {
+        "question": "Elemen apa yang digunakan untuk judul tingkat pertama?",
+        "correct": "h1",
+        "distractors": [
+          "p",
+          "small",
+          "li"
+        ],
+        "explanation": "Elemen h1 digunakan untuk heading dengan tingkat paling tinggi."
+      },
+      {
+        "question": "Elemen apa yang digunakan untuk paragraf?",
+        "correct": "p",
+        "distractors": [
+          "ol",
+          "table",
+          "input"
+        ],
+        "explanation": "Elemen p menandai sebuah paragraf teks."
+      },
+      {
+        "question": "Atribut apa yang menentukan tujuan tautan a?",
+        "correct": "href",
+        "distractors": [
+          "src",
+          "alt",
+          "charset"
+        ],
+        "explanation": "Atribut href menyimpan alamat tujuan hyperlink."
+      },
+      {
+        "question": "Atribut apa yang menentukan sumber gambar img?",
+        "correct": "src",
+        "distractors": [
+          "href",
+          "action",
+          "method"
+        ],
+        "explanation": "Atribut src pada img menentukan lokasi berkas gambar."
+      },
+      {
+        "question": "Apa kegunaan atribut alt pada gambar?",
+        "correct": "Memberi teks alternatif yang bermakna",
+        "distractors": [
+          "Mengganti semua warna gambar",
+          "Menentukan port server",
+          "Membuat gambar selalu bergerak"
+        ],
+        "explanation": "Teks alt menjelaskan gambar untuk aksesibilitas dan saat gambar tidak tersedia."
+      },
+      {
+        "question": "Elemen apa yang membuat daftar tanpa penomoran?",
+        "correct": "ul",
+        "distractors": [
+          "ol",
+          "tr",
+          "form"
+        ],
+        "explanation": "Elemen ul digunakan untuk daftar yang tidak memerlukan urutan bernomor."
+      },
+      {
+        "question": "Elemen apa yang membuat daftar bernomor?",
+        "correct": "ol",
+        "distractors": [
+          "ul",
+          "td",
+          "label"
+        ],
+        "explanation": "Elemen ol digunakan untuk daftar yang urutannya bermakna."
+      },
+      {
+        "question": "Elemen apa yang menandai satu item daftar?",
+        "correct": "li",
+        "distractors": [
+          "th",
+          "img",
+          "meta"
+        ],
+        "explanation": "Elemen li menandai setiap item dalam ul atau ol."
+      },
+      {
+        "question": "Elemen apa yang menandai baris tabel?",
+        "correct": "tr",
+        "distractors": [
+          "td",
+          "caption",
+          "input"
+        ],
+        "explanation": "Elemen tr mengelompokkan sel-sel dalam satu baris tabel."
+      },
+      {
+        "question": "Apa perbedaan th terhadap td?",
+        "correct": "th menandai sel header tabel",
+        "distractors": [
+          "th selalu menampilkan gambar",
+          "td tidak boleh memuat teks",
+          "th menggantikan seluruh tabel"
+        ],
+        "explanation": "Elemen th memberi makna header pada sel tabel sedangkan td untuk sel data."
+      },
+      {
+        "question": "Apa fungsi elemen form?",
+        "correct": "Mengelompokkan kontrol untuk mengirim input",
+        "distractors": [
+          "Mengganti seluruh struktur head",
+          "Mengatur DNS aplikasi",
+          "Membuat daftar berpoin"
+        ],
+        "explanation": "Form mengelompokkan kontrol input yang dapat dikirim ke server."
+      },
+      {
+        "question": "Bagaimana label dihubungkan dengan input tertentu?",
+        "correct": "Nilai for pada label sama dengan id input",
+        "distractors": [
+          "Teks label harus sama dengan password",
+          "Keduanya wajib berada dalam tabel",
+          "Input harus memakai tag h1"
+        ],
+        "explanation": "Atribut for pada label merujuk ke id input yang dijelaskan."
+      },
+      {
+        "question": "Apa fungsi atribut name pada input formulir?",
+        "correct": "Menjadi nama field saat data dikirim",
+        "distractors": [
+          "Mengatur ukuran huruf",
+          "Menentukan warna label",
+          "Mengganti tipe dokumen"
+        ],
+        "explanation": "Atribut name digunakan sebagai nama field dalam data formulir yang dikirim."
+      },
+      {
+        "question": "Elemen semantik apa yang sesuai untuk navigasi utama?",
+        "correct": "nav",
+        "distractors": [
+          "code",
+          "em",
+          "br"
+        ],
+        "explanation": "Elemen nav menandai bagian halaman yang berisi tautan navigasi."
+      }
+    ]
+  },
+  {
+    "title": "CSS dan Styling Website",
+    "description": "Memahami selector, box model, tata letak, dan tampilan responsif dengan CSS.",
+    "questions": [
+      {
+        "question": "Apa fungsi selector dalam CSS?",
+        "correct": "Memilih elemen yang akan diberi gaya",
+        "distractors": [
+          "Mengirim data ke database",
+          "Membuat sertifikat HTTPS",
+          "Mengubah alamat halaman"
+        ],
+        "explanation": "Selector menentukan elemen HTML yang menerima suatu aturan CSS."
+      },
+      {
+        "question": "Selector apa yang memilih semua paragraf?",
+        "correct": "p",
+        "distractors": [
+          ".p",
+          "#p",
+          "@p"
+        ],
+        "explanation": "Selector p memilih elemen HTML dengan tag p."
+      },
+      {
+        "question": "Selector apa yang memilih class kartu?",
+        "correct": ".kartu",
+        "distractors": [
+          "#kartu",
+          "kartu()",
+          "@kartu"
+        ],
+        "explanation": "Titik di depan nama digunakan untuk memilih sebuah class CSS."
+      },
+      {
+        "question": "Selector apa yang memilih elemen dengan id utama?",
+        "correct": "#utama",
+        "distractors": [
+          ".utama",
+          "utama[]",
+          "@utama"
+        ],
+        "explanation": "Tanda pagar di depan nama digunakan untuk memilih id elemen."
+      },
+      {
+        "question": "Properti apa yang mengatur warna teks?",
+        "correct": "color",
+        "distractors": [
+          "background-image",
+          "display",
+          "margin"
+        ],
+        "explanation": "Properti color menentukan warna teks pada elemen."
+      },
+      {
+        "question": "Properti apa yang mengatur warna latar?",
+        "correct": "background-color",
+        "distractors": [
+          "font-size",
+          "text-align",
+          "border-width"
+        ],
+        "explanation": "Properti background-color menentukan warna latar elemen."
+      },
+      {
+        "question": "Properti apa yang mengatur ukuran huruf?",
+        "correct": "font-size",
+        "distractors": [
+          "font-style",
+          "line-height",
+          "padding"
+        ],
+        "explanation": "Properti font-size mengatur ukuran karakter teks."
+      },
+      {
+        "question": "Properti apa yang membuat teks tebal?",
+        "correct": "font-weight",
+        "distractors": [
+          "text-decoration",
+          "position",
+          "overflow"
+        ],
+        "explanation": "Properti font-weight menentukan ketebalan huruf."
+      },
+      {
+        "question": "Apa yang dimaksud margin?",
+        "correct": "Jarak di luar border elemen",
+        "distractors": [
+          "Jarak antara isi dan border",
+          "Warna isi elemen",
+          "Tinggi setiap karakter"
+        ],
+        "explanation": "Margin adalah ruang di luar border sebuah elemen."
+      },
+      {
+        "question": "Apa yang dimaksud padding?",
+        "correct": "Jarak antara isi dan border elemen",
+        "distractors": [
+          "Jarak di luar seluruh elemen",
+          "Jenis font cadangan",
+          "Urutan pemuatan script"
+        ],
+        "explanation": "Padding adalah ruang antara konten dan border elemen."
+      },
+      {
+        "question": "Komponen mana yang termasuk box model?",
+        "correct": "Content, padding, border, margin",
+        "distractors": [
+          "URL, DNS, HTTP, TLS",
+          "Model, route, controller, seeder",
+          "Array, object, function, event"
+        ],
+        "explanation": "Box model terdiri dari content, padding, border, dan margin."
+      },
+      {
+        "question": "Apa efek box-sizing: border-box?",
+        "correct": "Width mencakup content, padding, dan border",
+        "distractors": [
+          "Width hanya menghitung margin",
+          "Border selalu disembunyikan",
+          "Padding tidak dapat digunakan"
+        ],
+        "explanation": "Dengan border-box, ukuran width sudah mencakup padding dan border."
+      },
+      {
+        "question": "Apa fungsi display: flex?",
+        "correct": "Membentuk layout fleksibel satu dimensi",
+        "distractors": [
+          "Menyimpan file ke server",
+          "Membuat database baru",
+          "Menghapus semua margin browser"
+        ],
+        "explanation": "Flexbox membantu mengatur item sepanjang satu sumbu utama."
+      },
+      {
+        "question": "Pada flex-direction: row, justify-content mengatur apa?",
+        "correct": "Distribusi item pada sumbu horizontal",
+        "distractors": [
+          "Ukuran file gambar",
+          "Urutan query database",
+          "Encoding halaman"
+        ],
+        "explanation": "Pada flex row, sumbu utama horizontal dan justify-content mengatur distribusi item di sana."
+      },
+      {
+        "question": "Apa kegunaan CSS Grid?",
+        "correct": "Menyusun layout baris dan kolom",
+        "distractors": [
+          "Mengganti semua event JavaScript",
+          "Memvalidasi password server",
+          "Menentukan domain aplikasi"
+        ],
+        "explanation": "CSS Grid menyediakan tata letak dua dimensi berupa baris dan kolom."
+      },
+      {
+        "question": "Apa fungsi properti gap pada layout grid?",
+        "correct": "Mengatur jarak antaritem",
+        "distractors": [
+          "Mengubah bahasa dokumen",
+          "Membuat garis bawah teks",
+          "Menentukan URL gambar"
+        ],
+        "explanation": "Gap mengatur jarak antarbaris atau antarkolom pada grid."
+      },
+      {
+        "question": "Apa tujuan media query?",
+        "correct": "Menerapkan gaya berdasarkan kondisi seperti lebar layar",
+        "distractors": [
+          "Mengirim email otomatis",
+          "Menambahkan relasi database",
+          "Mengubah HTML menjadi JSON"
+        ],
+        "explanation": "Media query memungkinkan gaya menyesuaikan kondisi perangkat seperti ukuran viewport."
+      },
+      {
+        "question": "Satuan rem mengacu pada apa?",
+        "correct": "Ukuran font elemen akar",
+        "distractors": [
+          "Lebar gambar terbesar",
+          "Jumlah paragraf halaman",
+          "Ukuran margin elemen sebelumnya"
+        ],
+        "explanation": "Satuan rem mengacu pada ukuran font elemen akar dokumen."
+      },
+      {
+        "question": "Apa fungsi pseudo-class :hover?",
+        "correct": "Memberi gaya saat penunjuk berada di atas elemen",
+        "distractors": [
+          "Menyimpan data saat logout",
+          "Menjalankan query setiap detik",
+          "Mengganti seluruh struktur dokumen"
+        ],
+        "explanation": "Pseudo-class hover memberi gaya ketika penunjuk berada di atas elemen."
+      },
+      {
+        "question": "Aturan mana biasanya menang jika specificity sama dan tidak ada !important?",
+        "correct": "Aturan yang muncul lebih akhir",
+        "distractors": [
+          "Aturan yang memiliki nama terpendek",
+          "Aturan dengan warna paling terang",
+          "Aturan pada baris paling awal selalu menang"
+        ],
+        "explanation": "Dalam kondisi prioritas dan specificity sama, urutan sumber yang lebih akhir menang."
+      }
+    ]
+  },
+  {
+    "title": "Dasar JavaScript",
+    "description": "Mengenal variabel, tipe data, kontrol alur, fungsi, array, DOM, dan event.",
+    "questions": [
+      {
+        "question": "Keyword apa yang cocok untuk variabel yang akan diberi nilai baru?",
+        "correct": "let",
+        "distractors": [
+          "const",
+          "return",
+          "break"
+        ],
+        "explanation": "Variabel let dapat diberi nilai baru setelah deklarasi."
+      },
+      {
+        "question": "Apa karakteristik binding const?",
+        "correct": "Tidak dapat diberi nilai binding baru",
+        "distractors": [
+          "Selalu memiliki tipe string",
+          "Selalu bersifat global",
+          "Hanya dapat menyimpan angka"
+        ],
+        "explanation": "Const mencegah penggantian binding, tetapi isi objeknya masih dapat berubah."
+      },
+      {
+        "question": "Manakah contoh nilai string?",
+        "correct": "\"Halo\"",
+        "distractors": [
+          "42",
+          "true",
+          "null"
+        ],
+        "explanation": "String merepresentasikan teks seperti Halo yang ditulis dalam tanda kutip."
+      },
+      {
+        "question": "Manakah contoh nilai boolean?",
+        "correct": "true",
+        "distractors": [
+          "\"true\"",
+          "123",
+          "[]"
+        ],
+        "explanation": "Boolean memiliki dua nilai, yaitu true dan false."
+      },
+      {
+        "question": "Apa hasil 2 + 3 dalam JavaScript?",
+        "correct": "5",
+        "distractors": [
+          "23",
+          "6",
+          "1"
+        ],
+        "explanation": "Operator tambah menjumlahkan operand angka sehingga 2 ditambah 3 menghasilkan 5."
+      },
+      {
+        "question": "Apa fungsi operator ===?",
+        "correct": "Membandingkan nilai dan tipe tanpa konversi implisit",
+        "distractors": [
+          "Selalu mengubah string menjadi angka",
+          "Memberi nilai baru ke variabel",
+          "Menggabungkan dua array"
+        ],
+        "explanation": "Strict equality membandingkan nilai tanpa konversi tipe implisit."
+      },
+      {
+        "question": "Struktur apa yang memilih cabang berdasarkan kondisi?",
+        "correct": "if",
+        "distractors": [
+          "import",
+          "const",
+          "return"
+        ],
+        "explanation": "Pernyataan if menjalankan blok kode ketika kondisinya bernilai truthy."
+      },
+      {
+        "question": "Struktur apa yang cocok untuk pengulangan dengan penghitung?",
+        "correct": "for",
+        "distractors": [
+          "throw",
+          "class",
+          "export"
+        ],
+        "explanation": "Perulangan for dapat memakai inisialisasi, kondisi, dan perubahan penghitung."
+      },
+      {
+        "question": "Apa tujuan fungsi?",
+        "correct": "Mengelompokkan kode yang dapat dipanggil kembali",
+        "distractors": [
+          "Menghapus semua variabel global",
+          "Mengganti alamat server",
+          "Membuat CSS selalu terpasang"
+        ],
+        "explanation": "Fungsi mengelompokkan perilaku yang dapat digunakan kembali melalui pemanggilan."
+      },
+      {
+        "question": "Apa fungsi return di dalam fungsi?",
+        "correct": "Mengembalikan nilai dan mengakhiri eksekusi fungsi",
+        "distractors": [
+          "Mengulangi fungsi tanpa batas",
+          "Menghapus argumen fungsi",
+          "Menambah elemen HTML otomatis"
+        ],
+        "explanation": "Return mengakhiri eksekusi fungsi dan dapat mengembalikan sebuah nilai."
+      },
+      {
+        "question": "Bagaimana mengambil elemen pertama array daftar?",
+        "correct": "daftar[0]",
+        "distractors": [
+          "daftar[1]",
+          "daftar.first() selalu tersedia",
+          "daftar{-1}"
+        ],
+        "explanation": "Indeks array JavaScript dimulai dari nol."
+      },
+      {
+        "question": "Properti apa yang menunjukkan panjang array?",
+        "correct": "length",
+        "distractors": [
+          "size()",
+          "count()",
+          "total"
+        ],
+        "explanation": "Properti length menunjukkan panjang array."
+      },
+      {
+        "question": "Metode apa yang menambahkan item di akhir array?",
+        "correct": "push",
+        "distractors": [
+          "pop",
+          "shift",
+          "slice"
+        ],
+        "explanation": "Metode push menambahkan satu atau beberapa item di akhir array."
+      },
+      {
+        "question": "Apa kegunaan object JavaScript?",
+        "correct": "Menyimpan pasangan properti dan nilai",
+        "distractors": [
+          "Hanya menyimpan angka berurutan",
+          "Menggantikan protokol HTTP",
+          "Mematikan event browser"
+        ],
+        "explanation": "Object menyimpan data sebagai pasangan properti dan nilai."
+      },
+      {
+        "question": "Apa arti DOM pada halaman web?",
+        "correct": "Representasi dokumen sebagai pohon objek",
+        "distractors": [
+          "Database khusus semua browser",
+          "Metode enkripsi server",
+          "Alamat jaringan lokal"
+        ],
+        "explanation": "DOM merepresentasikan dokumen sebagai pohon objek yang dapat diakses program."
+      },
+      {
+        "question": "Apa fungsi document.querySelector()?",
+        "correct": "Mengambil elemen pertama yang cocok dengan selector",
+        "distractors": [
+          "Mengambil seluruh tabel database",
+          "Membuat request POST otomatis",
+          "Menghapus semua elemen yang cocok"
+        ],
+        "explanation": "QuerySelector mengembalikan elemen pertama yang cocok atau null jika tidak ditemukan."
+      },
+      {
+        "question": "Properti apa yang sesuai untuk mengganti teks tanpa mem-parsing HTML?",
+        "correct": "textContent",
+        "distractors": [
+          "innerHTML",
+          "outerHTML",
+          "src"
+        ],
+        "explanation": "TextContent mengatur teks literal tanpa menafsirkan isi sebagai markup HTML."
+      },
+      {
+        "question": "Apa fungsi addEventListener()?",
+        "correct": "Mendaftarkan fungsi penangan event",
+        "distractors": [
+          "Membuat database baru",
+          "Menghapus semua stylesheet",
+          "Mengganti nama domain"
+        ],
+        "explanation": "AddEventListener memasang callback yang dipanggil saat event tertentu terjadi."
+      },
+      {
+        "question": "Apa manfaat event.preventDefault() pada submit form?",
+        "correct": "Mencegah perilaku submit bawaan browser",
+        "distractors": [
+          "Menghapus seluruh field form",
+          "Menjamin validasi server tidak perlu",
+          "Mematikan semua JavaScript"
+        ],
+        "explanation": "PreventDefault dapat mencegah perilaku bawaan sebuah event yang dapat dibatalkan."
+      },
+      {
+        "question": "Apa fungsi await di dalam fungsi async?",
+        "correct": "Menunggu penyelesaian promise secara asinkron",
+        "distractors": [
+          "Mengubah semua nilai menjadi string",
+          "Menjalankan ulang seluruh halaman",
+          "Menghapus error secara otomatis"
+        ],
+        "explanation": "Await menunggu hasil promise dalam alur fungsi async tanpa memblokir seluruh event loop."
+      }
+    ]
+  },
+  {
+    "title": "Integrasi Frontend dan Backend",
+    "description": "Mempelajari request API, JSON, validasi, autentikasi, dan penanganan respons server.",
+    "questions": [
+      {
+        "question": "Apa fungsi API dalam integrasi aplikasi?",
+        "correct": "Menyediakan antarmuka pertukaran data atau operasi",
+        "distractors": [
+          "Mengatur warna layar secara fisik",
+          "Menggantikan semua database",
+          "Menambah memori browser otomatis"
+        ],
+        "explanation": "API menyediakan antarmuka untuk berkomunikasi dan menjalankan operasi antarkomponen."
+      },
+      {
+        "question": "Metode HTTP apa yang lazim dipakai untuk membaca data?",
+        "correct": "GET",
+        "distractors": [
+          "POST",
+          "PATCH",
+          "DELETE"
+        ],
+        "explanation": "GET digunakan untuk mengambil representasi sumber daya."
+      },
+      {
+        "question": "Metode HTTP apa yang lazim dipakai untuk membuat data baru?",
+        "correct": "POST",
+        "distractors": [
+          "GET",
+          "HEAD",
+          "OPTIONS"
+        ],
+        "explanation": "POST lazim digunakan untuk mengirim data guna membuat sumber daya baru."
+      },
+      {
+        "question": "Metode HTTP apa yang lazim dipakai untuk perubahan parsial data?",
+        "correct": "PATCH",
+        "distractors": [
+          "GET",
+          "HEAD",
+          "OPTIONS"
+        ],
+        "explanation": "PATCH digunakan untuk menerapkan perubahan parsial pada sumber daya."
+      },
+      {
+        "question": "Metode HTTP apa yang lazim dipakai untuk menghapus sumber daya?",
+        "correct": "DELETE",
+        "distractors": [
+          "GET",
+          "HEAD",
+          "TRACE"
+        ],
+        "explanation": "DELETE meminta server menghapus sumber daya yang dituju."
+      },
+      {
+        "question": "Apa fungsi JSON dalam API?",
+        "correct": "Menjadi format pertukaran data terstruktur",
+        "distractors": [
+          "Menentukan warna komponen",
+          "Mengompilasi kode PHP",
+          "Mengatur ukuran monitor"
+        ],
+        "explanation": "JSON adalah format teks untuk pertukaran data terstruktur."
+      },
+      {
+        "question": "Header apa yang menunjukkan body request berupa JSON?",
+        "correct": "Content-Type: application/json",
+        "distractors": [
+          "Accept-Language: id",
+          "Cache-Control: no-cache",
+          "User-Agent: browser"
+        ],
+        "explanation": "Content-Type application/json menunjukkan bahwa body dikirim dalam format JSON."
+      },
+      {
+        "question": "Apa fungsi JSON.stringify()?",
+        "correct": "Mengubah nilai JavaScript menjadi teks JSON",
+        "distractors": [
+          "Mengubah JSON menjadi DOM otomatis",
+          "Mengenkripsi semua request",
+          "Menghapus data sebelum dikirim"
+        ],
+        "explanation": "JSON.stringify mengubah nilai JavaScript yang didukung menjadi teks JSON."
+      },
+      {
+        "question": "Apa fungsi JSON.parse()?",
+        "correct": "Mengubah teks JSON menjadi nilai JavaScript",
+        "distractors": [
+          "Mengirim file ke server",
+          "Mengubah URL menjadi IP",
+          "Menghapus seluruh response"
+        ],
+        "explanation": "JSON.parse membaca teks JSON dan menghasilkan nilai JavaScript."
+      },
+      {
+        "question": "Apa fungsi fetch() di frontend?",
+        "correct": "Mengirim request jaringan dan menerima response",
+        "distractors": [
+          "Mengganti semua validator server",
+          "Menyimpan API key dengan aman di HTML",
+          "Menjalankan migration database"
+        ],
+        "explanation": "Fetch menyediakan API browser untuk melakukan request jaringan."
+      },
+      {
+        "question": "Mengapa response.ok perlu diperiksa setelah fetch()?",
+        "correct": "Fetch tidak otomatis menolak promise untuk setiap status HTTP error",
+        "distractors": [
+          "Fetch selalu mengubah 404 menjadi 200",
+          "Response tidak pernah memiliki status",
+          "Fetch hanya mendukung gambar"
+        ],
+        "explanation": "Fetch dapat resolve untuk status error HTTP sehingga aplikasi perlu memeriksa status atau response.ok."
+      },
+      {
+        "question": "Apa arti status HTTP 201?",
+        "correct": "Sumber daya berhasil dibuat",
+        "distractors": [
+          "Sumber daya tidak ditemukan",
+          "Pengguna wajib logout",
+          "Server tidak memahami JSON"
+        ],
+        "explanation": "HTTP 201 menunjukkan pembuatan sumber daya berhasil."
+      },
+      {
+        "question": "Apa arti status HTTP 401?",
+        "correct": "Request belum memiliki autentikasi yang valid",
+        "distractors": [
+          "Semua data berhasil dihapus",
+          "Halaman selalu bersifat publik",
+          "Response tidak memiliki body"
+        ],
+        "explanation": "HTTP 401 menunjukkan request memerlukan autentikasi yang valid."
+      },
+      {
+        "question": "Apa arti status HTTP 403?",
+        "correct": "Akses ke operasi ditolak",
+        "distractors": [
+          "Akun pasti belum pernah dibuat",
+          "Data berhasil disimpan",
+          "Server meminta halaman dimuat ulang"
+        ],
+        "explanation": "HTTP 403 menunjukkan server menolak akses terhadap operasi yang diminta."
+      },
+      {
+        "question": "Di mana validasi penting harus tetap dilakukan?",
+        "correct": "Di server meskipun frontend sudah memvalidasi",
+        "distractors": [
+          "Hanya pada CSS",
+          "Hanya pada placeholder input",
+          "Hanya pada teks tombol"
+        ],
+        "explanation": "Validasi server tetap diperlukan karena request dapat dikirim tanpa melalui antarmuka resmi."
+      },
+      {
+        "question": "Apa fungsi CSRF token pada form berbasis session?",
+        "correct": "Membantu mencegah request palsu lintas situs",
+        "distractors": [
+          "Membuat password terlihat di HTML",
+          "Menggantikan seluruh authorization",
+          "Memastikan server tidak pernah down"
+        ],
+        "explanation": "CSRF token membantu memverifikasi bahwa request perubahan berasal dari konteks aplikasi yang sah."
+      },
+      {
+        "question": "Apa perbedaan autentikasi dan otorisasi?",
+        "correct": "Autentikasi mengenali identitas, otorisasi menentukan izin",
+        "distractors": [
+          "Keduanya hanya mengubah warna tombol",
+          "Otorisasi selalu berarti menyimpan password",
+          "Autentikasi hanya mengurutkan database"
+        ],
+        "explanation": "Autentikasi memverifikasi identitas sedangkan otorisasi memeriksa hak melakukan tindakan."
+      },
+      {
+        "question": "Di mana API key rahasia provider AI seharusnya disimpan?",
+        "correct": "Konfigurasi server melalui environment variable",
+        "distractors": [
+          "Kode JavaScript publik",
+          "Atribut data pada tombol",
+          "Komentar HTML halaman"
+        ],
+        "explanation": "API key rahasia harus berada di server dan tidak dikirim ke browser."
+      },
+      {
+        "question": "Mengapa tombol kirim dinonaktifkan selama request berlangsung?",
+        "correct": "Mengurangi pengiriman berulang oleh pengguna",
+        "distractors": [
+          "Menggantikan validasi backend",
+          "Membuat semua response selalu sukses",
+          "Menghapus kebutuhan error handling"
+        ],
+        "explanation": "Loading state dan tombol nonaktif membantu mengurangi request ganda dari antarmuka."
+      },
+      {
+        "question": "Mengapa backend tetap memerlukan idempotency untuk operasi tertentu?",
+        "correct": "Agar request ulang tidak membuat data duplikat",
+        "distractors": [
+          "Agar seluruh query menjadi GET",
+          "Agar semua pengguna menjadi admin",
+          "Agar browser tidak membutuhkan JavaScript"
+        ],
+        "explanation": "Idempotency memastikan pengulangan request yang sama tidak menggandakan efek operasi."
+      }
+    ]
+  }
+]

@@ -84,4 +84,13 @@ class CourseController extends Controller
 
         return back()->with('success', 'Kursus berhasil dipublikasikan dan kini dapat diakses oleh siswa.');
     }
+
+    public function regenerateEnrollmentCode(Course $course): RedirectResponse
+    {
+        Gate::authorize('update', $course);
+
+        $course->generateEnrollmentCode();
+
+        return back()->with('success', 'Token kelas berhasil diperbarui. Token lama tidak dapat digunakan lagi untuk pendaftaran baru.');
+    }
 }

@@ -103,8 +103,8 @@
                                         $completed = in_array($mat->id, $completedMaterialIds);
                                     @endphp
                                     <a href="{{ route('student.materials.show', ['course' => $course, 'material' => $mat]) }}" 
-                                       class="block px-3 py-2 rounded-lg text-sm transition-colors border {{ $isCurrent ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300' : 'border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-slate-300' }}">
-                                        <div class="flex items-center gap-2">
+                                       class="block px-3 py-2 rounded-lg text-sm transition-colors border cursor-pointer {{ $isCurrent ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300' : 'border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-slate-300' }}">
+                                        <div class="flex items-center gap-2 pointer-events-none">
                                             @if($completed)
                                                 <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                             @else
@@ -123,8 +123,8 @@
                             <h4 class="text-xs font-bold text-slate-400 mb-2">Kuis Evaluasi</h4>
                             <div class="space-y-1">
                                 @foreach($course->quizzes->where('status', 'published') as $quiz)
-                                    <a href="{{ route('student.quizzes.show', $quiz) }}" class="block px-3 py-2 rounded-lg text-sm border border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-slate-300 transition-colors">
-                                        <div class="flex items-center gap-2">
+                                    <a href="{{ route('student.quizzes.show', $quiz) }}" class="block px-3 py-2 rounded-lg text-sm border border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-slate-300 transition-colors cursor-pointer">
+                                        <div class="flex items-center gap-2 pointer-events-none">
                                             <svg class="w-4 h-4 text-purple-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                                             <span class="truncate">{{ $quiz->title }}</span>
                                         </div>

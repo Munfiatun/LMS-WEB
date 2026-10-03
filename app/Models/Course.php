@@ -33,6 +33,7 @@ class Course extends Model
         'thumbnail',
         'status',
         'published_at',
+        'enrollment_code',
     ];
 
     /**
@@ -118,5 +119,16 @@ class Course extends Model
     public function enrollments(): HasMany
     {
         return $this->hasMany(CourseEnrollment::class);
+    }
+
+    public function generateEnrollmentCode(): string
+    {
+        do {
+            $code = strtoupper(Str::random(6));
+        } while (static::where('enrollment_code', $code)->exists());
+
+        $this->update(['enrollment_code' => $code]);
+
+        return $code;
     }
 }

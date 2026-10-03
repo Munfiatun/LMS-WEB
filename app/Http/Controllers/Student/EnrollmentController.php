@@ -5,18 +5,33 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Services\EnrollmentService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class EnrollmentController extends Controller
 {
     public function __construct(private EnrollmentService $enrollmentService) {}
 
-    public function store(Course $course)
+    public function store(Request $request, Course $course)
     {
-        \Log::info('Store hit');
+        $request->validate([
+            'enrollment_code' => ['required', 'string'],
+        ]);
+
+        $token = strtoupper(trim($request->input('enrollment_code')));
+
+        if ($course->enrollment_code !== $token) {
+            return back()->with('error', 'Token kelas tidak valid.');
+        }
+
+        $enrollment = $course->enrollments()->where('student_id', auth()->id())->first();
+        if ($enrollment) {
+            return back()->with('error', 'Anda sudah terdaftar pada kelas ini.');
+        }
+
         $this->enrollmentService->enrollStudent($course, auth()->user());
 
-        return redirect()->route('courses.show', $course->slug)->with('success', 'Berhasil mendaftar ke kelas.');
+        return redirect()->route('student.courses.index')->with('success', 'Berhasil bergabung ke kelas.');
     }
 
     public function continue(Course $course)

@@ -21,11 +21,13 @@ use App\Http\Controllers\Instructor\SectionController as InstructorSectionContro
 use App\Http\Controllers\Instructor\SlidebookReviewController;
 use App\Http\Controllers\Instructor\SlideController;
 use App\Http\Controllers\Public\CourseCatalogController;
+use App\Http\Controllers\Student\CourseController as StudentCourseController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
 use App\Http\Controllers\Student\EnrollmentController;
 use App\Http\Controllers\Student\MaterialController;
 use App\Http\Controllers\Student\ProgressController;
 use App\Http\Controllers\Student\QuizAttemptController;
+use App\Http\Controllers\Student\QuizController as StudentQuizController;
 use App\Http\Controllers\Student\SlidebookViewerController;
 use Illuminate\Support\Facades\Route;
 
@@ -78,6 +80,7 @@ Route::middleware(['auth', 'role:instructor'])
         Route::resource('courses', InstructorCourseController::class)->except(['show']);
         Route::post('/courses/{course}/publish', [InstructorCourseController::class, 'publish'])->name('courses.publish');
         Route::get('/courses/{course}/analytics', [AnalyticsController::class, 'show'])->name('courses.analytics');
+        Route::post('/courses/{course}/enrollment-code/regenerate', [InstructorCourseController::class, 'regenerateEnrollmentCode'])->name('courses.regenerate-code');
 
         // Sections
         Route::post('/courses/{course}/sections', [InstructorSectionController::class, 'store'])->name('sections.store');
@@ -151,6 +154,10 @@ Route::middleware(['auth', 'role:student'])
         Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
         Route::get('/slidebooks/{slidebook}', [SlidebookViewerController::class, 'show'])->name('slidebooks.show');
 
+        // Course Discovery & Lists
+        Route::get('/courses', [StudentCourseController::class, 'index'])->name('courses.index');
+        Route::get('/courses/explore', [StudentCourseController::class, 'explore'])->name('courses.explore');
+
         // Enrollment & Progress
         Route::post('/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('courses.enroll');
         Route::get('/courses/{course}/continue', [EnrollmentController::class, 'continue'])->name('courses.continue');
@@ -158,6 +165,7 @@ Route::middleware(['auth', 'role:student'])
         Route::get('/courses/{course}/materials/{material}', [MaterialController::class, 'show'])->name('materials.show');
 
         // Quizzes
+        Route::get('/quizzes', [StudentQuizController::class, 'index'])->name('quizzes.index');
         Route::get('/quizzes/{quiz}', [QuizAttemptController::class, 'show'])->name('quizzes.show');
         Route::post('/quizzes/{quiz}/start', [QuizAttemptController::class, 'start'])->name('quizzes.start');
         Route::get('/quizzes/{quiz}/attempt/{attempt}', [QuizAttemptController::class, 'take'])->name('quizzes.take');

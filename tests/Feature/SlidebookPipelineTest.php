@@ -12,6 +12,7 @@ use App\Models\Slidebook;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class SlidebookPipelineTest extends TestCase
@@ -33,6 +34,8 @@ class SlidebookPipelineTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['ai.provider' => 'mock']);
+        Http::preventStrayRequests();
         $this->seed(RoleSeeder::class);
 
         $instructorRole = Role::where('name', Role::ROLE_INSTRUCTOR)->first();
@@ -269,5 +272,66 @@ class SlidebookPipelineTest extends TestCase
         $response->assertViewIs('student.slidebooks.show');
         $response->assertSee('Published Slidebook');
         $response->assertSee('Slide Pembelajaran 1');
+    }
+
+    public function test_student_and_teacher_preview_share_all_presentation_patterns_without_changing_source(): void
+    {
+        $book = Slidebook::create([
+            'material_id' => $this->material->id,
+            'title' => 'Presentasi lintas format',
+            'status' => Slidebook::STATUS_PUBLISHED,
+            'version' => 1,
+            'created_by' => $this->instructor->id,
+        ]);
+        $examples = [
+            ['Pembuka', 'Konsep pengantar.', 'concept'],
+            ['Poin penting', "- Definisi pertama\n- Definisi kedua", 'key-points'],
+            ['Alur kerja', "1. Mulai\n2. Proses\n3. Selesai", 'process'],
+            ['A vs B', "- A: Sifat pertama\n- B: Sifat kedua", 'comparison'],
+            ['Kode HTML', "```html\n<script>alert('xss')</script>\n```", 'code'],
+            ['Contoh penerapan', 'Contoh dari guru.', 'example'],
+            ['Diagram', "![Diagram guru](/storage/diagram.png)\n\nPenjelasan lengkap.", 'visual'],
+            ['Rangkuman', '- Intisari sumber.', 'summary'],
+            ['Cek pemahaman', "Apa jawabannya?\nA. Satu\nB. Dua", 'checkpoint'],
+            ['Kutipan', '> Teks kutipan sumber.', 'quote'],
+            ['Bacaan', "## Bagian satu\nPenjelasan.\n\nINFO: Catatan sumber.", 'reading'],
+            ['Tabel', "| Sisi A | Sisi B |\n| --- | --- |\n| Isi A | Isi B |", 'comparison'],
+        ];
+        foreach ($examples as $index => [$title, $content]) {
+            $book->slides()->create(['title' => $title, 'content' => $content, 'order' => $index + 1]);
+        }
+        $original = $book->slides()->get()->toArray();
+
+        $student = $this->actingAs($this->student)->get(route('student.slidebooks.show', $book))->assertOk();
+        $teacher = $this->actingAs($this->instructor)->get(route('instructor.slidebooks.preview', $book))->assertOk();
+
+        foreach ($examples as [$title, $content, $layout]) {
+            $student->assertSee('data-layout="'.$layout.'"', false)->assertSee($title)->assertSee($content);
+            $teacher->assertSee('data-layout="'.$layout.'"', false);
+        }
+        $student->assertDontSee("<script>alert('xss')</script>", false);
+        $teacher->assertSee('Preview Siswa');
+        preg_match_all('/<article\b.*?<\/article>/s', $student->getContent(), $studentSlides);
+        preg_match_all('/<article\b.*?<\/article>/s', $teacher->getContent(), $teacherSlides);
+        $this->assertSame($studentSlides[0], $teacherSlides[0]);
+        $this->assertSame($original, $book->slides()->get()->toArray());
+        $this->assertTrue($this->instructor->fresh()->isInstructor());
+    }
+
+    public function test_owner_can_preview_private_empty_slidebook_and_other_teacher_cannot(): void
+    {
+        $book = Slidebook::create([
+            'material_id' => $this->material->id,
+            'title' => 'Draft kosong',
+            'status' => Slidebook::STATUS_REVIEW,
+            'version' => 1,
+            'created_by' => $this->instructor->id,
+        ]);
+
+        $this->actingAs($this->instructor)->get(route('instructor.slidebooks.preview', $book))
+            ->assertOk()->assertSee('Belum ada slide');
+        $this->actingAs($this->otherInstructor)->get(route('instructor.slidebooks.preview', $book))->assertForbidden();
+        $this->actingAs($this->student)->get(route('instructor.slidebooks.preview', $book))
+            ->assertRedirect(route('student.dashboard'));
     }
 }

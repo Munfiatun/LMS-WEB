@@ -52,6 +52,7 @@
     </style>
 </head>
 <body class="h-full flex flex-col font-sans antialiased bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+    @unless($focusMode ?? false)
     <!-- Navbar -->
     <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -107,12 +108,15 @@
         </div>
     </header>
 
+    @endunless
+
     <!-- Main Content -->
     <main class="flex-1">
         {{ $slot ?? '' }}
         @yield('content')
     </main>
 
+    @unless($focusMode ?? false)
     <!-- Footer -->
     <footer class="border-t border-slate-800/80 bg-slate-950 py-10 mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -127,5 +131,6 @@
             </div>
         </div>
     </footer>
+    @endunless
 </body>
 </html>

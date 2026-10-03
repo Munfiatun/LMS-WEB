@@ -34,6 +34,10 @@ return [
             'model' => env('GROQ_MODEL', 'openai/gpt-oss-20b'),
             'timeout' => (int) env('GROQ_TIMEOUT', 60),
             'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+            // Upper bound for max_completion_tokens (reasoning + JSON). openai/gpt-oss-20b allows up to 65,536.
+            'max_completion_tokens' => (int) env('GROQ_MAX_COMPLETION_TOKENS', 16384),
+            // Only sent to reasoning models (openai/gpt-oss-*). Reasoning tokens consume the completion budget.
+            'reasoning_effort' => env('GROQ_REASONING_EFFORT', 'low'),
         ],
 
         'gemini' => [

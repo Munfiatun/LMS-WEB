@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\QuizAttempt;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class QuizAttemptPolicy
 {
@@ -21,7 +20,7 @@ class QuizAttemptPolicy
      */
     public function view(User $user, QuizAttempt $quizAttempt): bool
     {
-        return $user->isAdmin() 
+        return $user->isAdmin()
             || $user->id === $quizAttempt->quiz->course->instructor_id
             || $user->id === $quizAttempt->student_id;
     }

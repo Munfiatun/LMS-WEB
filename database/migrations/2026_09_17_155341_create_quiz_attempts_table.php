@@ -25,7 +25,7 @@ return new class extends Migration
             $table->unsignedInteger('wrong_count')->default(0);
             $table->unsignedInteger('duration_seconds')->nullable();
             $table->timestamps();
-            
+
             $table->index(['quiz_id', 'student_id']);
         });
     }

@@ -56,7 +56,7 @@ class QuizAttemptService
             } else {
                 $questionsQuery->orderByPivot('order');
             }
-            
+
             // Limit to total_questions defined in quiz config
             $questions = $questionsQuery->take($quiz->total_questions)->get();
 
@@ -74,7 +74,7 @@ class QuizAttemptService
                 } else {
                     $optionsQuery->orderBy('id');
                 }
-                
+
                 $options = $optionsQuery->get();
                 $optionOrder = 1;
                 foreach ($options as $option) {
@@ -91,7 +91,7 @@ class QuizAttemptService
     }
 
     /**
-     * @param array<int, int|null> $answers Array of [question_id => selected_option_id]
+     * @param  array<int, int|null>  $answers  Array of [question_id => selected_option_id]
      */
     public function submitAttempt(QuizAttempt $attempt, array $answers): QuizAttempt
     {
@@ -101,7 +101,7 @@ class QuizAttemptService
 
         return DB::transaction(function () use ($attempt, $answers) {
             $now = now();
-            
+
             // Check Server-Authoritative Timer
             if ($attempt->expires_at && $now->isAfter($attempt->expires_at)) {
                 $attempt->status = 'expired';
@@ -115,18 +115,18 @@ class QuizAttemptService
             $score = 0;
             $correctCount = 0;
             $wrongCount = 0;
-            
+
             $maxPossibleScore = 0;
 
             $attemptQuestions = $attempt->attemptQuestions()->with('question.options')->get();
 
             foreach ($attemptQuestions as $attemptQuestion) {
                 $question = $attemptQuestion->question;
-                
+
                 // Determine points for this question from quiz_questions table
                 $quizQuestion = $attempt->quiz->quizQuestions()->where('question_id', $question->id)->first();
                 $points = $quizQuestion ? $quizQuestion->points : 10;
-                
+
                 $maxPossibleScore += $points;
 
                 $selectedOptionId = $answers[$question->id] ?? null;
@@ -162,12 +162,12 @@ class QuizAttemptService
             }
 
             $percentage = $maxPossibleScore > 0 ? ($score / $maxPossibleScore) * 100 : 0;
-            
+
             $attempt->score = $score;
             $attempt->percentage = $percentage;
             $attempt->correct_count = $correctCount;
             $attempt->wrong_count = $wrongCount;
-            
+
             $attempt->save();
 
             return $attempt;

@@ -8,7 +8,7 @@ class MockAIProvider implements AIProviderInterface
 {
     protected string $model = 'mock-educational-v1';
 
-    public function generateStructuredData(string $systemPrompt, string $userContent, array $schemaDefinition): array
+    public function generateStructuredData(string $systemPrompt, string $userContent, array $schemaDefinition, ?int $maxOutputTokens = null): array
     {
         // Detect whether the request is for Question Extraction or Slidebook
         $isQuestionRequest = isset($schemaDefinition['properties']['questions'])

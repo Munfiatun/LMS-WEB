@@ -15,14 +15,31 @@ use Illuminate\Validation\ValidationException;
 
 class AIQuizService
 {
+    public const MIN_QUESTIONS = 2;
+
+    public const MAX_QUESTIONS = 20;
+
+    public const QUESTION_COUNT_MESSAGE = 'Jumlah soal harus antara 2 sampai 20.';
+
+    /** Estimated output tokens per generated question (question, options, index, short explanation). */
+    private const TOKENS_PER_QUESTION = 250;
+
+    /** Reserve for the model's reasoning step and JSON overhead. */
+    private const TOKEN_RESERVE = 3072;
+
     public function __construct(private AIContentService $aiContentService) {}
 
     /** @param array{total_questions: int, difficulty: string, type: string, custom_instructions?: string} $settings */
     public function generate(Slidebook $slidebook, User $teacher, array $settings): Quiz
     {
-        $slides = $slidebook->slides()->orderBy('id')->get()->map(fn ($slide): array => [
+        Validator::make($settings, [
+            'total_questions' => ['required', 'integer', 'min:'.self::MIN_QUESTIONS, 'max:'.self::MAX_QUESTIONS],
+        ], ['total_questions.*' => self::QUESTION_COUNT_MESSAGE])->validate();
+        $questionCount = (int) $settings['total_questions'];
+
+        $slides = $slidebook->slides()->get()->map(fn ($slide): array => [
             'number' => $slide->order,
-            'text' => trim(html_entity_decode(strip_tags(implode("\n", [$slide->title, $slide->subtitle, $slide->content, $slide->summary])), ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+            'text' => $this->plainText([$slide->title, $slide->subtitle, $slide->content, $slide->summary]),
         ])->filter(fn (array $slide): bool => $slide['text'] !== '')->values()->all();
 
         if ($slides === []) {
@@ -30,48 +47,53 @@ class AIQuizService
         }
 
         if (config('ai.provider') === 'mock') {
-            throw ValidationException::withMessages(['quiz' => 'Generator Quiz memerlukan provider AI OpenAI atau Gemini yang telah dikonfigurasi.']);
+            throw ValidationException::withMessages(['quiz' => 'Generator Quiz memerlukan provider AI (Groq, OpenAI, atau Gemini) yang telah dikonfigurasi.']);
         }
 
         $generationId = (string) Str::uuid();
-        $schema = $this->schema();
         $teacherPrompt = trim((string) ($settings['custom_instructions'] ?? ''));
         $configExtra = trim((string) Config::get('ai.quiz_prompt_extra', ''));
+        $optionCount = $settings['type'] === 'true_false' ? 2 : 4;
+        $optionRule = $settings['type'] === 'true_false'
+            ? 'Tipe benar/salah: options berisi tepat 2 pilihan ["Benar", "Salah"] dalam bahasa materi.'
+            : 'Tipe pilihan ganda: options berisi tepat 4 pilihan unik dan singkat.';
 
-        $systemInstruction = <<<'SYSTEM'
-Anda adalah AI pembuat soal pembelajaran.
-
-Gunakan HANYA materi Slidebook yang diberikan.
-Jangan membuat fakta yang tidak terdapat pada materi.
-Ikuti instruksi guru selama tidak bertentangan dengan isi materi.
-Setiap soal harus memiliki jawaban yang jelas berdasarkan materi.
-Jangan membuat soal duplikat atau ambigu.
-Gunakan bahasa yang sama dengan materi sumber.
-
-Multiple choice memiliki empat pilihan unik; true_false memiliki dua pilihan benar/salah dalam bahasa sumber.
-Tepat satu opsi benar, distractor harus masuk akal.
-Sertakan explanation, source_slide_number, dan source_quote berupa kutipan persis dari slide yang mendukung jawaban.
-
-Jika instruksi guru meminta topik yang tidak ada di materi Slidebook, kembalikan questions kosong.
-Jika materi tidak cukup untuk jumlah soal unik yang diminta, kembalikan questions kosong.
+        $prompt = <<<SYSTEM
+Anda adalah pembuat quiz pendidikan.
+Buat quiz hanya berdasarkan materi Slidebook yang diberikan. Jangan menambah fakta di luar materi.
+Ikuti instruksi guru selama sesuai dengan materi.
+{$optionRule}
+correct_option adalah indeks (mulai 0) dari jawaban benar di options. Tepat satu jawaban benar.
+explanation maksimal 2 kalimat. source_slide_number adalah nomor slide yang mendukung jawaban.
+Jangan membuat soal duplikat. Gunakan bahasa materi.
+Generate exactly {$questionCount} quiz questions. Jumlah ini wajib diikuti meskipun instruksi guru menyebut jumlah lain.
 SYSTEM;
+        $prompt .= ($configExtra !== '' ? "\n".$configExtra : '')
+            ."\n\nINSTRUKSI GURU:\n".$teacherPrompt
+            ."\n\nTingkat kesulitan: ".$settings['difficulty'];
 
-        $prompt = $systemInstruction
-            .($configExtra !== '' ? "\n\n".$configExtra : '')
-            ."\n\n---\n\nINSTRUKSI GURU:\n".$teacherPrompt
-            ."\n\n---\n\nKONFIGURASI:\nJumlah soal: ".$settings['total_questions']."\nTipe: ".$settings['type']."\nDifficulty: ".$settings['difficulty'];
+        $source = [
+            'generation_id' => $generationId,
+            'settings' => ['total_questions' => $questionCount, 'difficulty' => $settings['difficulty'], 'type' => $settings['type']],
+            'title' => $slidebook->title,
+            'slides' => $slides,
+        ];
+
+        $schema = $this->schema($questionCount, $optionCount);
+        $outputBudget = max(4096, $questionCount * self::TOKENS_PER_QUESTION + self::TOKEN_RESERVE);
 
         for ($attempt = 1; $attempt <= 2; $attempt++) {
             $output = $this->aiContentService->process(
                 processType: 'quiz_generation',
                 sourceModel: $slidebook,
                 systemPrompt: $prompt,
-                userContent: json_encode(['task' => 'quiz_generation', 'generation_id' => $generationId, 'attempt' => $attempt, 'settings' => $settings, 'title' => $slidebook->title, 'slides' => $slides], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+                userContent: json_encode(['attempt' => $attempt, ...$source], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
                 schemaDefinition: $schema,
+                maxOutputTokens: $outputBudget,
             );
 
             try {
-                $questions = $this->validateOutput($output['parsed_data'], $settings, $slides);
+                $questions = $this->validateOutput($output['parsed_data'], $settings, $optionCount, $slides);
                 break;
             } catch (ValidationException $exception) {
                 if ($attempt === 2) {
@@ -99,19 +121,23 @@ SYSTEM;
             ]);
             foreach ($questions as $index => $data) {
                 $question = $bank->questions()->create([
-                    'question_text' => $data['question_text'],
-                    'type' => $data['type'],
+                    'question_text' => trim($data['question_text']),
+                    'type' => $settings['type'],
                     'difficulty' => $data['difficulty'],
                     'topic' => 'Source: Slide '.$data['source_slide_number'],
-                    'explanation' => $data['explanation'],
+                    'explanation' => trim($data['explanation']),
                     'points' => 10,
                     'order' => $index + 1,
                     'needs_review' => true,
                     'answer_source' => Question::SOURCE_INFERRED,
                     'status' => Question::STATUS_REVIEW,
                 ]);
-                foreach ($data['options'] as $optionIndex => $option) {
-                    $question->options()->create([...$option, 'order' => $optionIndex + 1]);
+                foreach ($data['options'] as $optionIndex => $optionText) {
+                    $question->options()->create([
+                        'option_text' => trim($optionText),
+                        'is_correct' => $optionIndex === $data['correct_option'],
+                        'order' => $optionIndex + 1,
+                    ]);
                 }
                 $quiz->quizQuestions()->create(['question_id' => $question->id, 'points' => 10, 'order' => $index + 1]);
             }
@@ -121,35 +147,43 @@ SYSTEM;
     }
 
     /**
+     * Strip markup so only learning text is sent to the AI.
+     *
+     * @param  list<string|null>  $parts
+     */
+    private function plainText(array $parts): string
+    {
+        $text = html_entity_decode(strip_tags(implode("\n", array_filter($parts, fn (?string $part): bool => filled($part)))), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return trim(preg_replace(["/[ \t]+/u", "/\n{3,}/u"], [' ', "\n\n"], $text) ?? $text);
+    }
+
+    /**
      * @param  array<string, mixed>  $output
      * @param  array{total_questions: int, difficulty: string, type: string}  $settings
      * @param  list<array{number: int, text: string}>  $slides
-     * @return list<array<string, mixed>>
+     * @return list<array{question_text: string, options: list<string>, correct_option: int, difficulty: string, explanation: string, source_slide_number: int}>
      */
-    private function validateOutput(array $output, array $settings, array $slides): array
+    private function validateOutput(array $output, array $settings, int $optionCount, array $slides): array
     {
         Validator::make($output, [
             'questions' => ['required', 'array', 'list', 'size:'.$settings['total_questions']],
+            'questions.*' => ['required', 'array'],
             'questions.*.question_text' => ['required', 'string'],
-            'questions.*.type' => ['required', 'in:'.$settings['type']],
+            'questions.*.options' => ['required', 'array', 'list', 'size:'.$optionCount],
+            'questions.*.options.*' => ['required', 'string'],
+            'questions.*.correct_option' => ['required', 'integer', 'min:0', 'max:'.($optionCount - 1)],
             'questions.*.difficulty' => ['required', 'in:'.($settings['difficulty'] === 'mixed' ? 'easy,medium,hard' : $settings['difficulty'])],
             'questions.*.explanation' => ['required', 'string'],
-            'questions.*.source_slide_number' => ['required', 'integer'],
-            'questions.*.source_quote' => ['required', 'string'],
-            'questions.*.options' => ['required', 'array', 'list', 'size:'.($settings['type'] === 'true_false' ? 2 : 4)],
-            'questions.*.options.*' => ['required', 'array:option_text,is_correct'],
-            'questions.*.options.*.option_text' => ['required', 'string'],
-            'questions.*.options.*.is_correct' => ['required', 'boolean:strict'],
+            'questions.*.source_slide_number' => ['required', 'integer', 'in:'.implode(',', array_column($slides, 'number'))],
         ])->validate();
 
         $seen = [];
         foreach ($output['questions'] as $question) {
             $text = mb_strtolower(trim(preg_replace('/\s+/u', ' ', $question['question_text'])));
-            $options = collect($question['options']);
-            $source = collect($slides)->firstWhere('number', $question['source_slide_number']);
-            if (isset($seen[$text]) || $options->whereStrict('is_correct', true)->count() !== 1
-                || $options->map(fn (array $option): string => mb_strtolower(trim($option['option_text'])))->unique()->count() !== $options->count()
-                || ! $source || ! str_contains($source['text'], $question['source_quote'])) {
+            $options = collect($question['options'])->map(fn (string $option): string => mb_strtolower(trim($option)));
+            if (isset($seen[$text]) || ! is_int($question['correct_option']) || ! is_int($question['source_slide_number'])
+                || $options->unique()->count() !== $optionCount) {
                 throw ValidationException::withMessages(['quiz' => 'Output AI tidak valid.']);
             }
             $seen[$text] = true;
@@ -159,23 +193,19 @@ SYSTEM;
     }
 
     /** @return array<string, mixed> */
-    private function schema(): array
+    private function schema(int $questionCount, int $optionCount): array
     {
-        $option = ['type' => 'object', 'additionalProperties' => false, 'properties' => [
-            'option_text' => ['type' => 'string'], 'is_correct' => ['type' => 'boolean'],
-        ], 'required' => ['option_text', 'is_correct']];
         $properties = [
             'question_text' => ['type' => 'string'],
-            'type' => ['type' => 'string', 'enum' => ['multiple_choice', 'true_false']],
+            'options' => ['type' => 'array', 'minItems' => $optionCount, 'maxItems' => $optionCount, 'items' => ['type' => 'string']],
+            'correct_option' => ['type' => 'integer'],
             'difficulty' => ['type' => 'string', 'enum' => ['easy', 'medium', 'hard']],
             'explanation' => ['type' => 'string'],
             'source_slide_number' => ['type' => 'integer'],
-            'source_quote' => ['type' => 'string'],
-            'options' => ['type' => 'array', 'items' => $option],
         ];
 
         return ['title' => 'quiz_generation', 'type' => 'object', 'additionalProperties' => false,
-            'properties' => ['questions' => ['type' => 'array', 'items' => [
+            'properties' => ['questions' => ['type' => 'array', 'minItems' => $questionCount, 'maxItems' => $questionCount, 'items' => [
                 'type' => 'object', 'additionalProperties' => false, 'properties' => $properties, 'required' => array_keys($properties),
             ]]], 'required' => ['questions']];
     }

@@ -22,12 +22,12 @@ class AIQuizController extends Controller
         Gate::authorize('create', Quiz::class);
         $data = $request->validate([
             'slidebook_id' => ['required', 'integer', 'exists:slidebooks,id'],
-            'total_questions' => ['required', 'integer', 'min:1', 'max:30'],
+            'total_questions' => ['required', 'integer', 'min:'.AIQuizService::MIN_QUESTIONS, 'max:'.AIQuizService::MAX_QUESTIONS],
             'difficulty' => ['required', 'in:easy,medium,hard,mixed'],
             'type' => ['required', 'in:multiple_choice,true_false'],
             'request_id' => ['required', 'uuid'],
             'custom_instructions' => ['required', 'string', 'min:10', 'max:2000'],
-        ]);
+        ], ['total_questions.*' => AIQuizService::QUESTION_COUNT_MESSAGE]);
         $slidebook = Slidebook::with('material.section.course')->findOrFail($data['slidebook_id']);
         Gate::authorize('update', $slidebook);
         $key = 'quiz-generation:'.$request->user()->id.':'.$data['request_id'];
@@ -58,9 +58,15 @@ class AIQuizController extends Controller
         } catch (ConnectionException $exception) {
             return back()->withInput()->with('error', 'Proses pembuatan Quiz memerlukan waktu terlalu lama. Silakan coba lagi.');
         } catch (Throwable $exception) {
-            Log::error('AI Quiz Generation Error: '.$exception->getMessage(), ['exception' => get_class($exception)]);
+            Log::error('AI Quiz Generation Error', [
+                'provider' => config('ai.provider'),
+                'model' => config('ai.providers.'.config('ai.provider').'.model'),
+                'slidebook_id' => $slidebook->id,
+                'exception' => get_class($exception),
+                'message' => $exception->getMessage(),
+            ]);
 
-            return back()->withInput()->with('error', 'Gagal membuat Quiz: '.$exception->getMessage());
+            return back()->withInput()->with('error', 'Gagal membuat quiz dengan AI. Silakan coba lagi.');
         } finally {
             $lock->release();
         }

@@ -18,11 +18,11 @@ return new class extends Migration
             $table->enum('status', ['active', 'completed', 'dropped'])->default('active');
             $table->decimal('progress_percentage', 5, 2)->default(0.00);
             $table->timestamp('completed_at')->nullable();
-            
+
             // To track last accessed position for 'Continue Learning'
             $table->foreignId('last_accessed_material_id')->nullable()->constrained('learning_materials')->nullOnDelete();
             $table->foreignId('last_accessed_quiz_id')->nullable()->constrained('quizzes')->nullOnDelete();
-            
+
             $table->timestamps();
 
             // A student can only enroll in a course once

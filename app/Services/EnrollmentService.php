@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\LearningMaterial;
 use App\Models\MaterialProgress;
+use App\Models\Quiz;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -65,6 +66,7 @@ class EnrollmentService
 
         if ($totalItems === 0) {
             $enrollment->update(['progress_percentage' => 100, 'status' => 'completed', 'completed_at' => now()]);
+
             return;
         }
 
@@ -79,13 +81,13 @@ class EnrollmentService
         // Completed quizzes (passed)
         $completedQuizzes = $course->quizzes()->whereHas('attempts', function ($q) use ($student) {
             $q->where('student_id', $student->id)
-              ->whereColumn('percentage', '>=', 'passing_score');
+                ->whereColumn('percentage', '>=', 'passing_score');
         })->count();
 
         $completedItems = $completedMaterials + $completedQuizzes;
-        
+
         $percentage = ($completedItems / $totalItems) * 100;
-        
+
         $enrollment->progress_percentage = min(100, $percentage);
 
         if ($enrollment->progress_percentage >= 100) {
@@ -99,7 +101,7 @@ class EnrollmentService
     /**
      * Set posisi terakhir belajar.
      */
-    public function setLastAccessed(Course $course, User $student, ?LearningMaterial $material = null, ?\App\Models\Quiz $quiz = null): void
+    public function setLastAccessed(Course $course, User $student, ?LearningMaterial $material = null, ?Quiz $quiz = null): void
     {
         $enrollment = CourseEnrollment::where('course_id', $course->id)
             ->where('student_id', $student->id)

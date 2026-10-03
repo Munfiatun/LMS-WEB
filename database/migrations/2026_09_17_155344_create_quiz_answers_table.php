@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedInteger('points_earned')->default(0);
             $table->timestamp('answered_at')->nullable();
             $table->timestamps();
-            
+
             $table->unique(['attempt_id', 'question_id']);
         });
     }

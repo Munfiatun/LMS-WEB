@@ -89,6 +89,35 @@
             </form>
         </div>
 
+        <!-- Left: Enrollment Token Management -->
+        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow h-fit space-y-4">
+            <h2 class="text-base font-bold text-white border-b border-slate-800 pb-3">Akses & Pendaftaran Siswa</h2>
+
+            <div class="space-y-3">
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Token Kelas</label>
+                @if($course->enrollment_code)
+                    <div class="flex items-center justify-between p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                        <code class="text-lg font-mono font-bold text-emerald-400 tracking-widest" id="tokenText">{{ $course->enrollment_code }}</code>
+                        <button onclick="navigator.clipboard.writeText('{{ $course->enrollment_code }}').then(() => { alert('Token berhasil disalin.'); })" type="button" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold uppercase rounded-lg transition-colors border border-slate-700">
+                            Salin
+                        </button>
+                    </div>
+                @else
+                    <div class="p-3 bg-slate-950 border border-amber-900/30 rounded-xl">
+                        <p class="text-xs text-amber-400 font-medium">Belum ada token. Regenerate untuk membuat token baru.</p>
+                    </div>
+                @endif
+
+                <form action="{{ route('instructor.courses.regenerate-code', $course) }}" method="POST" onsubmit="return confirm('Token lama tidak dapat digunakan lagi untuk pendaftaran baru. Lanjutkan?')">
+                    @csrf
+                    <button type="submit" class="w-full py-2 px-4 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-colors shadow flex items-center justify-center gap-2 mt-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        Regenerate Token
+                    </button>
+                </form>
+            </div>
+        </div>
+
         <!-- Right: Syllabus / Sections & Materials Builder -->
         <div class="lg:col-span-2 space-y-6">
             <div class="flex items-center justify-between">

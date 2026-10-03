@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use App\Models\Course;
 use App\Models\Question;
 use App\Models\QuestionBank;
@@ -11,6 +9,8 @@ use App\Models\QuestionOption;
 use App\Models\Quiz;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class QuizEngineTest extends TestCase
 {
@@ -59,6 +59,13 @@ class QuizEngineTest extends TestCase
         $quiz->quizQuestions()->create(['question_id' => $question1->id, 'points' => 10, 'order' => 1]);
         $quiz->quizQuestions()->create(['question_id' => $question2->id, 'points' => 10, 'order' => 2]);
 
+        \App\Models\CourseEnrollment::create([
+            'course_id' => $course->id,
+            'student_id' => $student->id,
+            'status' => 'active',
+            'progress_percentage' => 0,
+        ]);
+
         // Student visits quiz intro
         $response = $this->actingAs($student)->get(route('student.quizzes.show', $quiz));
         $response->assertStatus(200);
@@ -76,7 +83,7 @@ class QuizEngineTest extends TestCase
             'answers' => [
                 $question1->id => $opt1A->id, // Correct
                 $question2->id => $opt2B->id, // Incorrect
-            ]
+            ],
         ]);
         $response->assertRedirect(route('student.quizzes.result', ['quiz' => $quiz->id, 'attempt' => $attempt->id]));
 

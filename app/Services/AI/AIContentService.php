@@ -47,7 +47,8 @@ class AIContentService
         string $systemPrompt,
         string $userContent,
         array $schemaDefinition,
-        ?string $providerOverride = null
+        ?string $providerOverride = null,
+        ?int $maxOutputTokens = null
     ): array {
         $provider = $this->getProvider($providerOverride);
         $promptVersion = (string) config('ai.prompt_version', 'v1.0');
@@ -85,7 +86,7 @@ class AIContentService
         ]);
 
         try {
-            $generated = $provider->generateStructuredData($systemPrompt, $userContent, $schemaDefinition);
+            $generated = $provider->generateStructuredData($systemPrompt, $userContent, $schemaDefinition, $maxOutputTokens);
 
             $result = AIProcessingResult::create([
                 'log_id' => $log->id,

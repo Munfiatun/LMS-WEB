@@ -7,6 +7,7 @@ use App\Models\CourseSection;
 use App\Models\LearningMaterial;
 use App\Models\Question;
 use App\Models\QuestionBank;
+use App\Models\QuestionOption;
 use App\Models\Quiz;
 use App\Models\Role;
 use App\Models\Slidebook;
@@ -42,7 +43,7 @@ class AIQuizGenerationTest extends TestCase
         $response->assertRedirect(route('instructor.quizzes.show', $quiz));
         $this->assertSame('draft', $quiz->status);
         $this->assertNull($quiz->published_at);
-        $question = $quiz->questions()->sole();
+        $question = $quiz->questions()->firstOrFail();
         $this->assertTrue($question->needs_review);
         $this->assertSame('review', $question->status);
         $this->assertSame('Source: Slide 1', $question->topic);
@@ -114,15 +115,14 @@ class AIQuizGenerationTest extends TestCase
         return [
             'wrong count' => ['questions', []],
             'empty text' => ['questions.0.question_text', '   '],
-            'unsupported type' => ['questions.0.type', 'essay'],
             'wrong difficulty' => ['questions.0.difficulty', 'hard'],
-            'no correct answer' => ['questions.0.options.1.is_correct', false],
-            'two correct answers' => ['questions.0.options.0.is_correct', true],
-            'non boolean answer' => ['questions.0.options.0.is_correct', 'false'],
-            'duplicate options' => ['questions.0.options.0.option_text', 'Merkurius'],
-            'missing option' => ['questions.0.options.0.option_text', ''],
+            'answer index out of range' => ['questions.0.correct_option', 4],
+            'negative answer index' => ['questions.0.correct_option', -1],
+            'non integer answer index' => ['questions.0.correct_option', '1'],
+            'duplicate options' => ['questions.0.options.0', 'Merkurius'],
+            'missing option' => ['questions.0.options.0', ''],
+            'too few options' => ['questions.0.options', ['Venus', 'Merkurius', 'Bumi']],
             'wrong source' => ['questions.0.source_slide_number', 99],
-            'invented evidence' => ['questions.0.source_quote', 'Venus paling dekat dengan Matahari.'],
         ];
     }
 
@@ -131,7 +131,7 @@ class AIQuizGenerationTest extends TestCase
         [$teacher, $slidebook] = $this->source();
         Http::fake(['https://api.openai.com/v1/chat/completions' => Http::sequence()->push($this->response(['questions' => []]))->push($this->response($this->generatedQuestions()))]);
         $this->actingAs($teacher)->post(route('instructor.quizzes.generate-ai'), $this->payload($slidebook))->assertSessionHas('success');
-        $this->assertDatabaseCount('questions', 1);
+        $this->assertDatabaseCount('questions', 2);
         Http::assertSentCount(2);
     }
 
@@ -191,8 +191,9 @@ class AIQuizGenerationTest extends TestCase
         Http::fake(['https://api.openai.com/v1/chat/completions' => Http::response($this->response($this->generatedQuestions()))]);
         $this->actingAs($teacher)->post(route('instructor.quizzes.generate-ai'), $this->payload($slidebook));
         $quiz = Quiz::sole();
-        $question = $quiz->questions()->sole();
+        $question = $quiz->questions()->firstOrFail();
         $student = $this->user('student');
+        \App\Models\CourseEnrollment::create(['course_id' => $quiz->course_id, 'student_id' => $student->id, 'status' => 'active', 'progress_percentage' => 0]);
         $this->actingAs($student)->get(route('student.quizzes.show', $quiz))->assertForbidden();
         $this->post(route('student.quizzes.start', $quiz))->assertForbidden();
         $this->actingAs($teacher)->post(route('instructor.quizzes.publish', $quiz))->assertSessionHasErrors('quiz');
@@ -241,13 +242,15 @@ class AIQuizGenerationTest extends TestCase
         [$teacher, $slidebook] = $this->source();
         config(['ai.provider' => 'gemini', 'ai.providers.gemini.api_key' => 'test-key', 'ai.providers.gemini.model' => 'gemini-2.5-flash']);
         $output = $this->generatedQuestions();
-        $output['questions'][0]['type'] = 'true_false';
-        $output['questions'][0]['question_text'] = 'Merkurius paling dekat dengan Matahari.';
-        $output['questions'][0]['options'] = [['option_text' => 'Benar', 'is_correct' => true], ['option_text' => 'Salah', 'is_correct' => false]];
+        foreach ($output['questions'] as &$question) {
+            $question['options'] = ['Benar', 'Salah'];
+            $question['correct_option'] = 0;
+        }
+        unset($question);
         Http::fake(['https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=test-key' => Http::response(['candidates' => [['content' => ['parts' => [['text' => json_encode($output)]]]]]])]);
         $this->actingAs($teacher)->post(route('instructor.quizzes.generate-ai'), [...$this->payload($slidebook), 'type' => 'true_false', 'difficulty' => 'mixed'])->assertSessionHas('success');
-        $this->assertSame('true_false', Question::sole()->type);
-        $this->assertSame(2, Question::sole()->options()->count());
+        $this->assertSame('true_false', Question::firstOrFail()->type);
+        $this->assertSame(2, Question::firstOrFail()->options()->count());
         Http::assertSent(fn ($request): bool => $request['generationConfig']['responseJsonSchema']['title'] === 'quiz_generation');
     }
 
@@ -255,7 +258,7 @@ class AIQuizGenerationTest extends TestCase
     {
         [$teacher, $slidebook] = $this->source();
         $output = $this->generatedQuestions();
-        $output['questions'][] = $output['questions'][0];
+        $output['questions'][1] = $output['questions'][0];
         Http::fake(['https://api.openai.com/v1/chat/completions' => Http::response($this->response($output))]);
         $this->actingAs($teacher)->post(route('instructor.quizzes.generate-ai'), [...$this->payload($slidebook), 'total_questions' => 2])->assertSessionHasErrors('quiz');
         $this->assertDatabaseCount('questions', 0);
@@ -289,6 +292,7 @@ class AIQuizGenerationTest extends TestCase
     {
         [$teacher, $slidebook] = $this->source();
         $student = $this->user('student');
+        \App\Models\CourseEnrollment::create(['course_id' => $slidebook->material->section->course_id, 'student_id' => $student->id, 'status' => 'active', 'progress_percentage' => 0]);
         $quiz = Quiz::factory()->create(['course_id' => $slidebook->material->section->course_id, 'status' => 'draft']);
         $otherQuiz = Quiz::factory()->create(['course_id' => $quiz->course_id, 'status' => 'published']);
         $attempt = $quiz->attempts()->create(['student_id' => $student->id, 'status' => 'in_progress', 'started_at' => now(), 'expires_at' => now()->addHour()]);
@@ -326,6 +330,119 @@ class AIQuizGenerationTest extends TestCase
         Http::assertNothingSent();
     }
 
+    #[DataProvider('validQuestionCounts')]
+    public function test_requested_question_count_reaches_provider_and_is_saved_exactly(int $count, string $provider): void
+    {
+        [$teacher, $slidebook] = $this->source();
+        config(['ai.provider' => $provider, 'ai.providers.groq.api_key' => 'test-key', 'ai.providers.gemini.api_key' => 'test-key', 'ai.providers.gemini.model' => 'gemini-2.5-flash']);
+        $lessons = json_decode(file_get_contents(database_path('seeders/web_learning_questions.json')), true, flags: JSON_THROW_ON_ERROR);
+        $items = array_slice($lessons[0]['questions'], 0, $count);
+        $slidebook->slides()->where('order', 1)->update(['content' => implode("\n", array_column($items, 'explanation'))]);
+        $questions = array_map(fn (array $item): array => [
+            'question_text' => $item['question'], 'difficulty' => 'easy',
+            'explanation' => $item['explanation'], 'source_slide_number' => 1,
+            'options' => [$item['correct'], ...$item['distractors']],
+            'correct_option' => 0,
+        ], $items);
+        $endpoint = match ($provider) {
+            'groq' => 'https://api.groq.com/openai/v1/chat/completions',
+            'gemini' => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=test-key',
+            default => 'https://api.openai.com/v1/chat/completions',
+        };
+        $response = $provider === 'gemini'
+            ? ['candidates' => [['content' => ['parts' => [['text' => json_encode(['questions' => $questions])]]]]]]
+            : $this->response(['questions' => $questions]);
+        Http::fake([$endpoint => Http::response($response)]);
+        $instructions = 'Fokus pada konsep utama dan jangan membuat soal duplikat.';
+
+        $this->actingAs($teacher)->post(route('instructor.quizzes.generate-ai'), [
+            ...$this->payload($slidebook), 'total_questions' => $count, 'custom_instructions' => $instructions,
+        ])->assertRedirect(route('instructor.quizzes.show', Quiz::sole()));
+
+        $quiz = Quiz::sole();
+        $this->assertSame($count, $quiz->questions()->count());
+        $this->assertSame($count, (int) $quiz->total_questions);
+        $this->assertSame('draft', $quiz->status);
+        $this->assertSame($count * 4, QuestionOption::count());
+        Http::assertSent(function ($request) use ($provider, $count, $instructions): bool {
+            $prompt = $provider === 'gemini' ? $request['contents'][0]['parts'][0]['text'] : $request['messages'][0]['content'];
+            $source = $provider === 'gemini' ? $prompt : $request['messages'][1]['content'];
+
+            return str_contains($prompt, "Generate exactly {$count} quiz questions.")
+                && str_contains($prompt, $instructions)
+                && str_contains($source, '"total_questions":'.$count);
+        });
+        Http::assertSentCount(1);
+    }
+
+    /** @return array<string, array{int, string}> */
+    public static function validQuestionCounts(): array
+    {
+        return ['2 OpenAI' => [2, 'openai'], '5 OpenAI' => [5, 'openai'], '10 OpenAI' => [10, 'openai'], '20 OpenAI' => [20, 'openai'], '20 Groq' => [20, 'groq'], '20 Gemini' => [20, 'gemini']];
+    }
+
+    #[DataProvider('invalidQuestionCounts')]
+    public function test_out_of_range_question_count_never_calls_provider(mixed $count): void
+    {
+        [$teacher, $slidebook] = $this->source();
+        Http::fake(['https://api.openai.com/v1/chat/completions' => Http::response([])]);
+        $this->actingAs($teacher)->post(route('instructor.quizzes.generate-ai'), [...$this->payload($slidebook), 'total_questions' => $count])
+            ->assertSessionHasErrors(['total_questions' => 'Jumlah soal harus antara 2 sampai 20.']);
+        $this->assertDatabaseCount('quizzes', 0);
+        Http::assertNothingSent();
+    }
+
+    /** @return array<string, array{mixed}> */
+    public static function invalidQuestionCounts(): array
+    {
+        return ['zero' => [0], 'one' => [1], '21' => [21], '50' => [50], 'negative' => [-1], 'empty' => [''], 'missing' => [null], 'text' => ['abc'], 'decimal' => [2.5]];
+    }
+
+    public function test_twenty_requested_questions_are_not_silently_reduced_to_two(): void
+    {
+        [$teacher, $slidebook] = $this->source();
+        Http::fake(['https://api.openai.com/v1/chat/completions' => Http::response($this->response($this->generatedQuestions()))]);
+        $this->actingAs($teacher)->post(route('instructor.quizzes.generate-ai'), [...$this->payload($slidebook), 'total_questions' => 20])
+            ->assertSessionHasErrors('quiz');
+        $this->assertDatabaseCount('questions', 0);
+        $this->assertDatabaseCount('quizzes', 0);
+        Http::assertSentCount(2);
+    }
+
+    public function test_groq_request_sizes_output_budget_by_question_count(): void
+    {
+        [$teacher, $slidebook] = $this->source();
+        config(['ai.provider' => 'groq', 'ai.providers.groq.api_key' => 'test-key', 'ai.providers.groq.model' => 'openai/gpt-oss-20b', 'ai.providers.groq.max_completion_tokens' => 16384]);
+        Http::fake(['https://api.groq.com/openai/v1/chat/completions' => Http::response($this->response($this->generatedQuestions()))]);
+
+        $this->actingAs($teacher)->post(route('instructor.quizzes.generate-ai'), $this->payload($slidebook))->assertSessionHas('success');
+
+        $this->assertSame(2, Quiz::sole()->questions()->count());
+        $this->assertSame(['Venus', 'Merkurius', 'Bumi', 'Mars'], Quiz::sole()->questions()->orderBy('order')->first()->options()->orderBy('order')->pluck('option_text')->all());
+        $this->assertSame('Merkurius', Quiz::sole()->questions()->orderBy('order')->first()->options()->where('is_correct', true)->value('option_text'));
+        Http::assertSent(fn ($request): bool => $request['max_completion_tokens'] === 4096
+            && $request['reasoning_effort'] === 'low'
+            && $request['response_format']['type'] === 'json_object'
+            && ! str_contains($request['messages'][0]['content'], 'source_quote'));
+    }
+
+    public function test_groq_truncated_json_shows_quiz_error_without_saving_dummy_questions(): void
+    {
+        [$teacher, $slidebook] = $this->source();
+        config(['ai.provider' => 'groq', 'ai.providers.groq.api_key' => 'test-key']);
+        Http::fake(['https://api.groq.com/openai/v1/chat/completions' => Http::response(['error' => [
+            'message' => 'Failed to generate JSON.', 'type' => 'invalid_request_error', 'code' => 'json_validate_failed',
+            'failed_generation' => 'max completion tokens reached before generating a valid document',
+        ]], 400)]);
+
+        $this->actingAs($teacher)->post(route('instructor.quizzes.generate-ai'), [...$this->payload($slidebook), 'total_questions' => 20])
+            ->assertSessionHas('error', 'Gagal membuat quiz dengan AI. Silakan coba lagi.');
+
+        $this->assertDatabaseCount('quizzes', 0);
+        $this->assertDatabaseCount('questions', 0);
+        Http::assertSent(fn ($request): bool => $request['max_completion_tokens'] === 20 * 250 + 3072);
+    }
+
     /** @return array{User, Slidebook} */
     private function source(): array
     {
@@ -352,24 +469,30 @@ class AIQuizGenerationTest extends TestCase
     /** @return array<string, mixed> */
     private function payload(Slidebook $slidebook): array
     {
-        return ['slidebook_id' => $slidebook->id, 'total_questions' => 1, 'difficulty' => 'easy', 'type' => 'multiple_choice', 'request_id' => (string) Str::uuid(), 'custom_instructions' => 'Buatkan 1 soal pilihan ganda tingkat mudah.'];
+        return ['slidebook_id' => $slidebook->id, 'total_questions' => 2, 'difficulty' => 'easy', 'type' => 'multiple_choice', 'request_id' => (string) Str::uuid(), 'custom_instructions' => 'Buatkan 2 soal pilihan ganda tingkat mudah.'];
     }
 
     /** @return array<string, mixed> */
     private function generatedQuestions(): array
     {
-        return ['questions' => [[
+        $output = ['questions' => [[
             'question_text' => 'Planet manakah yang paling dekat dengan Matahari?',
-            'type' => 'multiple_choice', 'difficulty' => 'easy',
+            'options' => ['Venus', 'Merkurius', 'Bumi', 'Mars'],
+            'correct_option' => 1,
+            'difficulty' => 'easy',
             'explanation' => 'Merkurius paling dekat dengan Matahari.',
-            'source_slide_number' => 1, 'source_quote' => 'Merkurius paling dekat dengan Matahari.',
-            'options' => [
-                ['option_text' => 'Venus', 'is_correct' => false],
-                ['option_text' => 'Merkurius', 'is_correct' => true],
-                ['option_text' => 'Bumi', 'is_correct' => false],
-                ['option_text' => 'Mars', 'is_correct' => false],
-            ],
+            'source_slide_number' => 1,
         ]]];
+        $output['questions'][] = [
+            ...$output['questions'][0],
+            'question_text' => 'Apa yang dikelilingi Bumi?',
+            'options' => ['Matahari', 'Mars', 'Venus', 'Merkurius'],
+            'correct_option' => 0,
+            'explanation' => 'Bumi mengelilingi Matahari.',
+            'source_slide_number' => 2,
+        ];
+
+        return $output;
     }
 
     /** @param array<string, mixed> $output

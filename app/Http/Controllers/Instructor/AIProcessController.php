@@ -35,7 +35,7 @@ class AIProcessController extends Controller
                 ->route('instructor.materials.slidebook.review', $material)
                 ->with('success', 'Slidebook berhasil dibuat oleh AI dan siap untuk ditinjau!');
         } catch (Throwable $e) {
-            return back()->with('error', 'Gagal memproses dokumen dengan AI: '.$e->getMessage());
+            return back()->with('error', 'Gagal memproses materi dengan AI: '.$e->getMessage());
         }
     }
 }

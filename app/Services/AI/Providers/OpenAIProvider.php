@@ -24,7 +24,7 @@ class OpenAIProvider implements AIProviderInterface
         $this->baseUrl = rtrim((string) config('ai.providers.openai.base_url', 'https://api.openai.com/v1'), '/');
     }
 
-    public function generateStructuredData(string $systemPrompt, string $userContent, array $schemaDefinition): array
+    public function generateStructuredData(string $systemPrompt, string $userContent, array $schemaDefinition, ?int $maxOutputTokens = null): array
     {
         if (empty($this->apiKey)) {
             throw new RuntimeException('OpenAI API key is missing. Set OPENAI_API_KEY in .env or switch AI_PROVIDER to mock.');

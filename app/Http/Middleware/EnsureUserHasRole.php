@@ -37,6 +37,7 @@ class EnsureUserHasRole
             if ($user->isInstructor()) {
                 return redirect()->route('instructor.dashboard')->with('error', 'Akses ditolak: Anda dialihkan ke dashboard Anda.');
             }
+
             return redirect()->route('student.dashboard')->with('error', 'Akses ditolak: Anda dialihkan ke dashboard Anda.');
         }
 

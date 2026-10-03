@@ -4,6 +4,7 @@ namespace App\Services\AI\Providers;
 
 use App\Services\AI\Contracts\AIProviderInterface;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class GroqProvider implements AIProviderInterface
@@ -16,42 +17,68 @@ class GroqProvider implements AIProviderInterface
 
     protected string $baseUrl;
 
+    protected int $maxCompletionTokens;
+
+    protected ?string $reasoningEffort;
+
     public function __construct()
     {
         $this->apiKey = (string) config('ai.providers.groq.api_key');
         $this->model = (string) config('ai.providers.groq.model', 'openai/gpt-oss-20b');
         $this->timeout = (int) config('ai.providers.groq.timeout', 60);
         $this->baseUrl = rtrim((string) config('ai.providers.groq.base_url', 'https://api.groq.com/openai/v1'), '/');
+        $this->maxCompletionTokens = max(1024, (int) config('ai.providers.groq.max_completion_tokens', 16384));
+        $this->reasoningEffort = config('ai.providers.groq.reasoning_effort', 'low') ?: null;
     }
 
-    public function generateStructuredData(string $systemPrompt, string $userContent, array $schemaDefinition): array
+    public function generateStructuredData(string $systemPrompt, string $userContent, array $schemaDefinition, ?int $maxOutputTokens = null): array
     {
         if (empty($this->apiKey)) {
             throw new RuntimeException('Groq API key is missing. Set GROQ_API_KEY in .env or switch AI_PROVIDER to mock.');
         }
 
-        $schemaJson = json_encode($schemaDefinition, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        $systemPromptWithJson = $systemPrompt."\n\nIMPORTANT: You must respond with pure, valid JSON strictly adhering to the following JSON Schema:\n
-$schemaJson\n\nDo not enclose JSON in markdown code fences.";
+        $schemaJson = json_encode($schemaDefinition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $payload = [
+            'model' => $this->model,
+            'messages' => [
+                ['role' => 'system', 'content' => $systemPrompt."\n\nReturn ONLY one valid JSON object matching this JSON Schema. No markdown, no code fences, no text before or after the JSON.\n".$schemaJson],
+                ['role' => 'user', 'content' => $userContent],
+            ],
+            'response_format' => ['type' => 'json_object'],
+            'max_completion_tokens' => $maxOutputTokens !== null ? min($maxOutputTokens, $this->maxCompletionTokens) : $this->maxCompletionTokens,
+        ];
+        if ($this->reasoningEffort !== null && str_starts_with($this->model, 'openai/gpt-oss')) {
+            $payload['reasoning_effort'] = $this->reasoningEffort;
+        }
 
         $response = Http::withToken($this->apiKey)
             ->timeout($this->timeout)
-            ->post("{$this->baseUrl}/chat/completions", [
-                'model' => $this->model,
-                'messages' => [
-                    ['role' => 'system', 'content' => $systemPromptWithJson],
-                    ['role' => 'user', 'content' => $userContent],
-                ],
-                'response_format' => ['type' => 'json_object'],
-            ]);
+            ->post("{$this->baseUrl}/chat/completions", $payload);
 
         if (! $response->successful()) {
-            throw new RuntimeException("Groq API error: HTTP {$response->status()} - {$response->body()}");
+            $error = (array) $response->json('error', []);
+            $code = (string) ($error['code'] ?? 'unknown');
+            $message = (string) ($error['message'] ?? 'Unknown error');
+            Log::warning('Groq API request failed', [
+                'provider' => 'groq',
+                'model' => $this->model,
+                'status' => $response->status(),
+                'code' => $code,
+                'message' => $message,
+                'failed_generation' => mb_substr((string) ($error['failed_generation'] ?? ''), 0, 300),
+                'max_completion_tokens' => $payload['max_completion_tokens'],
+            ]);
+
+            throw new RuntimeException("Groq API error: HTTP {$response->status()} [{$code}] {$message}");
         }
 
         $responseData = $response->json();
         $content = $responseData['choices'][0]['message']['content'] ?? '';
         $tokensUsed = $responseData['usage']['total_tokens'] ?? null;
+
+        if (($responseData['choices'][0]['finish_reason'] ?? null) === 'length') {
+            throw new RuntimeException("Groq response was truncated at max_completion_tokens={$payload['max_completion_tokens']}.");
+        }
 
         $parsed = json_decode($content, true);
         if (! is_array($parsed)) {

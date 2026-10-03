@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('question_id')->constrained('questions')->cascadeOnDelete();
             $table->unsignedInteger('order');
             $table->timestamps();
-            
+
             $table->unique(['attempt_id', 'question_id']);
         });
     }

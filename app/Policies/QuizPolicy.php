@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Quiz;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class QuizPolicy
 {
@@ -21,7 +20,19 @@ class QuizPolicy
      */
     public function view(User $user, Quiz $quiz): bool
     {
-        return $user->isAdmin() || $user->id === $quiz->course->instructor_id || ($user->isStudent() && $quiz->status === 'published');
+        if ($user->isAdmin() || $user->id === $quiz->course->instructor_id) {
+            return true;
+        }
+
+        if ($user->isStudent()) {
+            if ($quiz->status !== 'published') {
+                return false;
+            }
+
+            return $quiz->course->enrollments()->where('student_id', $user->id)->exists();
+        }
+
+        return false;
     }
 
     /**

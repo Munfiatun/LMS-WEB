@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('option_id')->constrained('question_options')->cascadeOnDelete();
             $table->unsignedInteger('order');
             $table->timestamps();
-            
+
             $table->unique(['attempt_question_id', 'option_id']);
         });
     }

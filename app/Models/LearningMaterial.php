@@ -51,8 +51,6 @@ class LearningMaterial extends Model
         ];
     }
 
-
-
     public function progress()
     {
         return $this->hasMany(MaterialProgress::class);

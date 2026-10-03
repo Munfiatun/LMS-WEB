@@ -2,14 +2,13 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
 use App\Models\Course;
 use App\Models\CourseSection;
 use App\Models\LearningMaterial;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class EnrollmentAndProgressTest extends TestCase
 {
@@ -25,29 +24,33 @@ class EnrollmentAndProgressTest extends TestCase
 
         $course = Course::factory()->create([
             'instructor_id' => $instructor->id,
-            'status' => 'published'
+            'status' => 'published',
         ]);
 
         $section = CourseSection::factory()->create(['course_id' => $course->id]);
-        
+
         $material1 = LearningMaterial::factory()->create([
             'section_id' => $section->id,
-            'status' => 'published'
-        ]);
-        
-        $material2 = LearningMaterial::factory()->create([
-            'section_id' => $section->id,
-            'status' => 'published'
+            'status' => 'published',
         ]);
 
+        $material2 = LearningMaterial::factory()->create([
+            'section_id' => $section->id,
+            'status' => 'published',
+        ]);
+
+        $course->update(['enrollment_code' => 'TESTCODE']);
+
         // Student enrolls
-        $response = $this->actingAs($student)->post(route('student.courses.enroll', $course));
-        $response->assertRedirect(route('courses.show', $course->slug));
+        $response = $this->actingAs($student)->post(route('student.courses.enroll', $course), [
+            'enrollment_code' => 'TESTCODE'
+        ]);
+        $response->assertRedirect(route('student.courses.index'));
         $this->assertDatabaseHas('course_enrollments', [
             'course_id' => $course->id,
             'student_id' => $student->id,
             'status' => 'active',
-            'progress_percentage' => 0
+            'progress_percentage' => 0,
         ]);
 
         // Student completes material 1
@@ -55,12 +58,12 @@ class EnrollmentAndProgressTest extends TestCase
         $this->assertDatabaseHas('material_progress', [
             'student_id' => $student->id,
             'learning_material_id' => $material1->id,
-            'status' => 'completed'
+            'status' => 'completed',
         ]);
-        
+
         $this->assertDatabaseHas('course_enrollments', [
             'course_id' => $course->id,
-            'progress_percentage' => 50
+            'progress_percentage' => 50,
         ]);
 
         // Student completes material 2
@@ -68,7 +71,7 @@ class EnrollmentAndProgressTest extends TestCase
         $this->assertDatabaseHas('course_enrollments', [
             'course_id' => $course->id,
             'progress_percentage' => 100,
-            'status' => 'completed'
+            'status' => 'completed',
         ]);
     }
 }

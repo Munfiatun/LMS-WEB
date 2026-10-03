@@ -24,7 +24,7 @@ class GeminiProvider implements AIProviderInterface
         $this->baseUrl = rtrim((string) config('ai.providers.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
     }
 
-    public function generateStructuredData(string $systemPrompt, string $userContent, array $schemaDefinition): array
+    public function generateStructuredData(string $systemPrompt, string $userContent, array $schemaDefinition, ?int $maxOutputTokens = null): array
     {
         if (empty($this->apiKey)) {
             throw new RuntimeException('Gemini API key is missing. Set GEMINI_API_KEY in .env or switch AI_PROVIDER to mock.');
