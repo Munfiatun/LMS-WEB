@@ -59,10 +59,25 @@ class SlidebookReviewController extends Controller
 
     /**
      * Preview the slidebook from the student's perspective.
+     *
+     * The optional preset query parameter is applied only in memory so the
+     * instructor can compare themes before saving the design settings.
      */
     public function preview(Request $request, Slidebook $slidebook): View
     {
         Gate::authorize('view', $slidebook);
+
+        $validated = $request->validate([
+            'preset' => ['nullable', 'string', 'in:indigo-dark,modern-tech,academic-blue,creative-education,fresh-learning,minimalist'],
+            'embedded' => ['nullable', 'boolean'],
+        ]);
+
+        if (! empty($validated['preset'])) {
+            $slidebook->setAttribute('design_settings', array_merge(
+                $slidebook->design_settings ?? [],
+                ['preset' => $validated['preset']]
+            ));
+        }
 
         $slidebook->load([
             'slides' => fn ($q) => $q->orderBy('order'),
@@ -75,6 +90,7 @@ class SlidebookReviewController extends Controller
             'course' => $slidebook->material->section->course,
             'slides' => $slidebook->slides,
             'isPreview' => true,
+            'embedded' => (bool) ($validated['embedded'] ?? false),
         ]);
     }
 
@@ -114,7 +130,10 @@ class SlidebookReviewController extends Controller
         Gate::authorize('update', $slidebook);
 
         $slidebook->update([
-            'design_settings' => $request->validated(),
+            'design_settings' => array_merge(
+                $slidebook->design_settings ?? [],
+                $request->validated()
+            ),
         ]);
 
         return back()->with('success', 'Pengaturan desain berhasil diperbarui.');
