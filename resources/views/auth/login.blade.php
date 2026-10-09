@@ -10,26 +10,20 @@
                 </svg>
             </a>
             <h2 class="text-2xl font-extrabold text-white tracking-tight">Masuk ke Akun Anda</h2>
-            <p class="mt-2 text-sm text-slate-400">
-                Pilih akun demo atau gunakan kredensial yang terdaftar.
-            </p>
+            <p class="mt-2 text-sm text-slate-400">Pilih akun demo atau gunakan kredensial yang terdaftar.</p>
         </div>
 
-        <!-- Quick Demo Switcher -->
-        <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 space-y-2.5">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block text-center">Akun Demo Cepat (1-Klik)</span>
-            <div class="grid grid-cols-3 gap-2">
-                <button type="button" onclick="fillCredentials('admin@example.com', 'password')" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-rose-500/10 text-rose-300 border border-rose-500/20 hover:bg-rose-500/20 transition-all text-center">
-                    👑 Admin
-                </button>
-                <button type="button" onclick="fillCredentials('instructor@example.com', 'password')" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all text-center">
-                    🎓 Guru
-                </button>
-                <button type="button" onclick="fillCredentials('student@example.com', 'password')" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all text-center">
-                    🎒 Siswa
-                </button>
+        @if(app()->environment(['local', 'testing']) && config('auth.demo_user_password'))
+            <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 space-y-2.5">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block text-center">Akun Demo Cepat (1-Klik)</span>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="fillDemoCredentials('admin@example.com')" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-rose-500/10 text-rose-300 border border-rose-500/20 hover:bg-rose-500/20 transition-all text-center">👑 Admin</button>
+                    <button type="button" onclick="fillDemoCredentials('instructor@example.com')" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all text-center">🎓 Guru</button>
+                    <button type="button" onclick="fillDemoCredentials('student@example.com')" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all text-center">🎒 Siswa</button>
+                </div>
+                <p class="text-[10px] text-slate-500 text-center">Panel ini hanya tersedia pada environment local/testing.</p>
             </div>
-        </div>
+        @endif
 
         @if($errors->any())
             <div class="p-3.5 rounded-xl bg-rose-950/60 border border-rose-500/30 text-rose-300 text-xs space-y-1">
@@ -43,12 +37,9 @@
         @endif
 
         @if(session('success'))
-            <div class="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-xs">
-                {{ session('success') }}
-            </div>
+            <div class="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-xs">{{ session('success') }}</div>
         @endif
 
-        <!-- Login Form -->
         <form class="mt-6 space-y-5" action="{{ route('login') }}" method="POST">
             @csrf
             <div>
@@ -67,17 +58,13 @@
 
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <input id="remember" name="remember" type="checkbox"
-                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-800 bg-slate-950 rounded">
+                    <input id="remember" name="remember" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-800 bg-slate-950 rounded">
                     <label for="remember" class="ml-2 block text-xs text-slate-400">Ingat Saya</label>
                 </div>
             </div>
 
             <div>
-                <button type="submit"
-                        class="w-full py-3 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-lg shadow-indigo-600/25 transition-all hover:scale-[1.01] active:scale-[0.99]">
-                    Masuk ke Platform
-                </button>
+                <button type="submit" class="w-full py-3 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-lg shadow-indigo-600/25 transition-all hover:scale-[1.01] active:scale-[0.99]">Masuk ke Platform</button>
             </div>
         </form>
 
@@ -88,10 +75,14 @@
     </div>
 </div>
 
+@if(app()->environment(['local', 'testing']) && config('auth.demo_user_password'))
 <script>
-    function fillCredentials(email, password) {
+    const demoPassword = @js(config('auth.demo_user_password'));
+
+    function fillDemoCredentials(email) {
         document.getElementById('email').value = email;
-        document.getElementById('password').value = password;
+        document.getElementById('password').value = demoPassword;
     }
 </script>
+@endif
 @endsection
