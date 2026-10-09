@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AIProcessingLog;
+use App\Models\Course;
+use App\Models\LearningMaterial;
+use App\Models\Quiz;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -21,10 +25,10 @@ class DashboardController extends Controller
             'total_students' => $studentRole ? User::where('role_id', $studentRole->id)->count() : 0,
             'total_instructors' => $instructorRole ? User::where('role_id', $instructorRole->id)->count() : 0,
             'total_admins' => $adminRole ? User::where('role_id', $adminRole->id)->count() : 0,
-            'total_courses' => 0, // Placeholder until Phase 3
-            'total_materials' => 0,
-            'total_quizzes' => 0,
-            'ai_logs_count' => 0,
+            'total_courses' => Course::count(),
+            'total_materials' => LearningMaterial::count(),
+            'total_quizzes' => Quiz::count(),
+            'ai_logs_count' => AIProcessingLog::count(),
         ];
 
         $recentUsers = User::with('role')->latest()->take(5)->get();
