@@ -65,15 +65,34 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">
             @if($previewMode && $material->slidebook)
-                <div class="w-full h-[650px] rounded-2xl bg-black border-2 border-indigo-500/30 shadow-2xl overflow-hidden relative">
-                    <iframe src="{{ route('instructor.slidebooks.preview', $material->slidebook) }}" class="w-full h-full border-none"></iframe>
-                    <div class="absolute top-4 left-4 pointer-events-none">
-                        <span class="px-3 py-1 text-xs font-bold uppercase rounded-full bg-indigo-600/90 text-white shadow-lg backdrop-blur">Instructor Preview (v{{ $material->slidebook->version }})</span>
+                @php
+                    $previewSlidebook = $material->slidebook;
+                    $previewVersionKey = optional($previewSlidebook->updated_at)->timestamp ?? $previewSlidebook->version;
+                @endphp
+                <div class="rounded-2xl border border-indigo-500/30 bg-slate-950/70 shadow-2xl overflow-hidden">
+                    <div class="px-4 py-3 border-b border-indigo-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wider text-indigo-300">Instructor Preview · Slidebook v{{ $previewSlidebook->version }}</p>
+                            <p class="text-[11px] text-slate-500">Renderer siswa ditampilkan dalam sandbox read-only.</p>
+                        </div>
+                        <a href="{{ route('instructor.slidebooks.preview', $previewSlidebook) }}?v={{ $previewVersionKey }}" target="_blank" rel="noopener"
+                           class="px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-200 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors">
+                            Buka Preview Penuh
+                        </a>
+                    </div>
+                    <div class="w-full h-[650px] bg-black">
+                        <iframe
+                            src="{{ route('instructor.slidebooks.preview', $previewSlidebook) }}?embed=1&amp;v={{ $previewVersionKey }}"
+                            class="w-full h-full border-none"
+                            title="Preview siswa Slidebook versi {{ $previewSlidebook->version }}"
+                            sandbox="allow-scripts allow-same-origin"
+                            allowfullscreen
+                            loading="eager"></iframe>
                     </div>
                 </div>
             @elseif($material->publishedSlidebook && $material->publishedSlidebook->isPublished())
                 <div class="w-full h-[650px] rounded-2xl bg-slate-950 border border-slate-800 shadow-xl overflow-hidden relative">
-                    <iframe src="{{ route('student.slidebooks.show', $material->publishedSlidebook) }}" class="w-full h-full border-none"></iframe>
+                    <iframe src="{{ route('student.slidebooks.show', $material->publishedSlidebook) }}" class="w-full h-full border-none" title="Slidebook {{ $material->publishedSlidebook->title }}"></iframe>
                 </div>
             @endif
 
