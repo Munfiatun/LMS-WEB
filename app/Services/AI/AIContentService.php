@@ -51,7 +51,8 @@ class AIContentService
         string $userContent,
         array $schemaDefinition,
         ?string $providerOverride = null,
-        ?int $maxOutputTokens = null
+        ?int $maxOutputTokens = null,
+        bool $forceRegenerate = false
     ): array {
         $provider = $this->getProvider($providerOverride);
         $promptVersion = (string) config('ai.prompt_version', 'v1.0');
@@ -61,12 +62,13 @@ class AIContentService
         $existingLog = AIProcessingLog::where('input_hash', $inputHash)
             ->where('prompt_version', $promptVersion)
             ->where('status', AIProcessingLog::STATUS_COMPLETED)
+            ->where('process_type', $processType)
             ->where('source_type', get_class($sourceModel))
             ->where('source_id', $sourceModel->getKey())
             ->latest()
             ->first();
 
-        if ($existingLog && $existingLog->result) {
+        if (! $forceRegenerate && $existingLog && $existingLog->result) {
             return [
                 'log' => $existingLog,
                 'result' => $existingLog->result,

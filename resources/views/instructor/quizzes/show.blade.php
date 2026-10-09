@@ -1,6 +1,15 @@
 @extends('layouts.app')
 
 @section('content')
+@if($quiz->status === 'draft' && $publicationErrors)
+    <p class="text-sm text-amber-300">{{ implode(' ', $publicationErrors) }}</p>
+@endif
+@if($quiz->status === 'published' && ! $quiz->attempts()->exists())
+    <form action="{{ route('instructor.quizzes.unpublish', $quiz) }}" method="POST">
+        @csrf
+        <button type="submit">Kembalikan Quiz ke Draft</button>
+    </form>
+@endif
 @if($errors->any())
     <div role="alert" class="p-4 mb-4 rounded-lg bg-red-100 text-red-800">
         @foreach($errors->all() as $error)
@@ -29,7 +38,7 @@
                             Buka Builder
                         </a>
                         
-                        @if($quiz->status === 'draft')
+                        @if($publicationErrors === [])
                             <form action="{{ route('instructor.quizzes.publish', $quiz) }}" method="POST">
                                 @csrf
                                 <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">

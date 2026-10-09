@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Course;
+use App\Models\CourseEnrollment;
 use App\Models\Question;
 use App\Models\QuestionBank;
 use App\Models\QuestionOption;
@@ -59,7 +60,7 @@ class QuizEngineTest extends TestCase
         $quiz->quizQuestions()->create(['question_id' => $question1->id, 'points' => 10, 'order' => 1]);
         $quiz->quizQuestions()->create(['question_id' => $question2->id, 'points' => 10, 'order' => 2]);
 
-        \App\Models\CourseEnrollment::create([
+        CourseEnrollment::create([
             'course_id' => $course->id,
             'student_id' => $student->id,
             'status' => 'active',

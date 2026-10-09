@@ -29,7 +29,7 @@ class UpdateCourseRequest extends FormRequest
             'category_id' => ['nullable', 'exists:categories,id'],
             'description' => ['nullable', 'string'],
             'thumbnail' => ['nullable', 'image', 'max:2048'],
-            'status' => ['sometimes', 'in:draft,published,archived'],
+            'status' => ['prohibited'],
         ];
     }
 }

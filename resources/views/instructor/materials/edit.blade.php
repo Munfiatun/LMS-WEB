@@ -6,6 +6,19 @@
 @endphp
 
 @section('content')
+@if($material->status === 'published')
+    <form action="{{ route('instructor.materials.unpublish', $material) }}" method="POST">
+        @csrf
+        <button type="submit">Kembalikan ke Draft untuk Edit</button>
+    </form>
+@elseif($publicationErrors === [])
+    <form action="{{ route('instructor.materials.publish', $material) }}" method="POST">
+        @csrf
+        <button type="submit">Publikasikan Materi</button>
+    </form>
+@else
+    <p class="text-sm text-amber-300">{{ implode(' ', $publicationErrors) }}</p>
+@endif
 <div class="space-y-8" x-data="{ deleteConfirm: null }">
     {{-- Top Nav Bar --}}
     <div class="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-violet-950/30 to-slate-900 border border-slate-800 shadow-xl">
@@ -113,6 +126,7 @@
                 <h2 class="text-base font-bold text-white border-b border-slate-800 pb-3">Edit Informasi Materi</h2>
 
                 <form action="{{ route('instructor.materials.update', $material) }}" method="POST" class="space-y-4">
+<fieldset @disabled(! in_array($material->status, ['draft', 'review'], true))>
                     @csrf
                     @method('PUT')
 
@@ -129,12 +143,7 @@
                                    class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-indigo-500">
                         </div>
                         <div>
-                            <label for="status" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Status</label>
-                            <select id="status" name="status"
-                                    class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-indigo-500">
-                                <option value="draft" {{ old('status', $material->status) == 'draft' ? 'selected' : '' }}>Draft</option>
-                                <option value="published" {{ old('status', $material->status) == 'published' ? 'selected' : '' }}>Published</option>
-                            </select>
+                            <p class="text-xs text-slate-400">Publikasi dilakukan melalui action Publish setelah materi siap.</p>
                         </div>
                     </div>
 
@@ -155,7 +164,7 @@
                             Perbarui Informasi Materi
                         </button>
                     </div>
-                </form>
+                </fieldset></form>
             </div>
 
             {{-- Danger Zone --}}
@@ -191,6 +200,7 @@
                 </div>
 
                 <form action="{{ route('instructor.materials.documents.store', $material) }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+<fieldset @disabled(! in_array($material->status, ['draft', 'review'], true))>
                     @csrf
                     <label for="document" class="block cursor-pointer">
                         <div :class="isDragging ? 'border-indigo-400 bg-indigo-950/20' : 'border-slate-700 bg-slate-950/60 hover:border-indigo-500/50 hover:bg-indigo-950/10'"
@@ -222,7 +232,7 @@
                             </button>
                         </div>
                     </template>
-                </form>
+                </fieldset></form>
             </div>
 
             {{-- Uploaded Documents List --}}
@@ -251,6 +261,10 @@
                             {{-- File Info --}}
                             <div class="min-w-0 flex-1">
                                 <p class="text-sm font-semibold text-white truncate">{{ $doc->original_name }}</p>
+                                <p class="text-xs text-slate-400">{{ ucfirst($doc->extraction?->status ?? 'pending') }}</p>
+                                @if($doc->extraction?->status === 'failed')
+                                    <p class="text-xs text-rose-300">Dokumen gagal diproses. Unggah PDF teks atau DOCX yang valid.</p>
+                                @endif
                                 <div class="flex items-center gap-3 mt-1 text-[11px] text-slate-400">
                                     <span class="uppercase font-bold text-{{ $doc->extension === 'pdf' ? 'rose' : 'blue' }}-400">{{ $doc->extension }}</span>
                                     <span>&bull;</span>
@@ -266,13 +280,15 @@
                             <a href="{{ route('documents.download', $doc) }}" class="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors" title="Download">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             </a>
-                            <form action="{{ route('instructor.documents.destroy', $doc) }}" method="POST" onsubmit="return confirm('Hapus dokumen ini dari private storage?')">
+                            @if(in_array($material->status, ['draft', 'review'], true))
+<form action="{{ route('instructor.documents.destroy', $doc) }}" method="POST" onsubmit="return confirm('Hapus dokumen ini dari private storage?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors" title="Hapus">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                 </button>
                             </form>
+@endif
                         </div>
                     </div>
                 @empty

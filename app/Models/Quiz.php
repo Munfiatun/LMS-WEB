@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -36,6 +37,15 @@ class Quiz extends Model
         'randomize_options' => 'boolean',
         'published_at' => 'datetime',
     ];
+
+    /** @param Builder<$this> $query */
+    public function scopeAvailable(Builder $query): void
+    {
+        $query->where('quizzes.status', 'published')->where(function (Builder $query): void {
+            $query->whereNull('section_id')->orWhereHas('section', fn (Builder $section) => $section
+                ->where('status', 'active')->whereColumn('course_sections.course_id', 'quizzes.course_id'));
+        });
+    }
 
     public function course(): BelongsTo
     {

@@ -34,6 +34,7 @@ class SlidebookPolicy
         return $user->isStudent()
             && $slidebook->isPublished()
             && $material->status === LearningMaterial::STATUS_PUBLISHED
+            && $material->section->status === 'active'
             && $course->isPublished()
             && $course->enrollments()->where('student_id', $user->id)->where('status', 'active')->exists();
     }

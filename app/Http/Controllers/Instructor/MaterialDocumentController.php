@@ -17,7 +17,10 @@ class MaterialDocumentController extends Controller
     {
         $file = $request->file('document');
 
-        $service->storeMaterialDocument($material, $file, $request->user());
+        $document = $service->storeMaterialDocument($material, $file, $request->user());
+        if ($document->extraction?->status === 'failed') {
+            return back()->with('error', $document->extraction->error_message);
+        }
 
         return back()->with('success', 'Dokumen PDF/Word berhasil diunggah ke private storage dan siap dianalisis AI.');
     }

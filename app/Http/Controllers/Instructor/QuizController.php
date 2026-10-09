@@ -9,6 +9,7 @@ use App\Models\Quiz;
 use App\Models\QuizQuestion;
 use App\Models\Slidebook;
 use App\Services\Quiz\QuizService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -36,7 +37,7 @@ class QuizController extends Controller
         Gate::authorize('create', Quiz::class);
 
         $validated = $request->validate([
-            'course_id' => ['required', 'exists:courses,id'],
+            'course_id' => ['required', 'integer', 'exists:courses,id'],
             'section_id' => ['nullable', 'integer'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -47,6 +48,7 @@ class QuizController extends Controller
             'randomize_questions' => ['boolean'],
             'randomize_options' => ['boolean'],
             'max_attempts' => ['required', 'integer', 'min:1'],
+            'status' => ['prohibited'],
         ]);
 
         $course = Course::findOrFail($validated['course_id']);
@@ -65,12 +67,15 @@ class QuizController extends Controller
         Gate::authorize('view', $quiz);
         $quiz->load(['quizQuestions.question.options', 'quizQuestions.question.questionBank', 'course']);
 
-        return view('instructor.quizzes.show', compact('quiz'));
+        $publicationErrors = $this->quizService->publicationErrors($quiz);
+
+        return view('instructor.quizzes.show', compact('quiz', 'publicationErrors'));
     }
 
     public function builder(Quiz $quiz)
     {
         Gate::authorize('update', $quiz);
+        $this->quizService->assertEditable($quiz);
         $quiz->load(['quizQuestions.question']);
 
         $questionBanks = QuestionBank::where('instructor_id', auth()->id())
@@ -108,12 +113,16 @@ class QuizController extends Controller
     {
         Gate::authorize('update', $quiz);
 
-        if ($quiz->quizQuestions()->count() < $quiz->total_questions) {
-            return back()->with('error', 'Jumlah soal yang dipilih ('.$quiz->quizQuestions()->count().") masih kurang dari target total soal ({$quiz->total_questions}).");
-        }
-
         $this->quizService->publishQuiz($quiz);
 
         return back()->with('success', 'Kuis berhasil diterbitkan.');
+    }
+
+    public function unpublish(Quiz $quiz): RedirectResponse
+    {
+        Gate::authorize('update', $quiz);
+        $this->quizService->unpublishQuiz($quiz);
+
+        return back()->with('success', 'Quiz kembali ke draft untuk ditinjau.');
     }
 }

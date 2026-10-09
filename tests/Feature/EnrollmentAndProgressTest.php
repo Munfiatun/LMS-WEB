@@ -43,7 +43,7 @@ class EnrollmentAndProgressTest extends TestCase
 
         // Student enrolls
         $response = $this->actingAs($student)->post(route('student.courses.enroll', $course), [
-            'enrollment_code' => 'TESTCODE'
+            'enrollment_code' => 'TESTCODE',
         ]);
         $response->assertRedirect(route('student.courses.index'));
         $this->assertDatabaseHas('course_enrollments', [

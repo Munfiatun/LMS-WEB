@@ -14,10 +14,10 @@ class QuizController extends Controller
     public function index(Request $request): View
     {
         $enrolledCourseIds = CourseEnrollment::where('student_id', $request->user()->id)
-            ->pluck('course_id');
+            ->whereIn('status', ['active', 'completed'])->pluck('course_id');
 
         $quizzes = Quiz::whereIn('course_id', $enrolledCourseIds)
-            ->where('status', 'published')
+            ->available()->whereHas('course', fn ($query) => $query->published())
             ->with('course')
             ->latest()
             ->paginate(10);

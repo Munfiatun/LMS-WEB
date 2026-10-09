@@ -11,7 +11,9 @@ use App\Models\User;
 use App\Services\Document\Contracts\DocumentParserInterface;
 use App\Services\Document\Parsers\DocxDocumentParser;
 use App\Services\Document\Parsers\PdfDocumentParser;
+use App\Services\MaterialService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -19,10 +21,13 @@ use Throwable;
 
 class DocumentService
 {
+    public function __construct(private MaterialService $materialService) {}
+
     protected string $disk = 'private';
 
     public function storeMaterialDocument(LearningMaterial $material, UploadedFile $file, User $uploader): MaterialDocument
     {
+        $this->materialService->assertEditable($material);
         $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $extension = strtolower($file->getClientOriginalExtension());
         $mimeType = $file->getMimeType() ?? 'application/octet-stream';
@@ -100,11 +105,17 @@ class DocumentService
 
     public function extractDocumentContent(MaterialDocument $document): DocumentExtraction
     {
+        DocumentExtraction::updateOrCreate(['document_id' => $document->id], [
+            'content' => '', 'status' => 'processing', 'error_message' => null,
+        ]);
         $fullPath = Storage::disk($document->disk)->path($document->path);
 
         try {
             $parser = $this->getParserForExtension($document->extension);
             $result = $parser->parse($fullPath);
+            if (trim($result['content']) === '') {
+                throw new \RuntimeException('Document contains no extractable text');
+            }
 
             return DocumentExtraction::updateOrCreate(
                 ['document_id' => $document->id],
@@ -120,6 +131,8 @@ class DocumentService
                 ]
             );
         } catch (Throwable $e) {
+            Log::error('Document extraction failed', ['document_id' => $document->id, 'exception_type' => $e::class, 'exception_code' => $e->getCode()]);
+
             return DocumentExtraction::updateOrCreate(
                 ['document_id' => $document->id],
                 [
@@ -128,9 +141,9 @@ class DocumentService
                     'page_count' => null,
                     'word_count' => 0,
                     'character_count' => 0,
-                    'metadata' => ['error' => $e->getMessage()],
+                    'metadata' => ['exception_type' => $e::class],
                     'status' => 'failed',
-                    'error_message' => $e->getMessage(),
+                    'error_message' => 'Dokumen gagal diproses. Gunakan PDF teks atau DOCX yang valid.',
                 ]
             );
         }
@@ -138,6 +151,7 @@ class DocumentService
 
     public function deleteMaterialDocument(MaterialDocument $document): bool
     {
+        $this->materialService->assertEditable($document->material);
         if (Storage::disk($document->disk)->exists($document->path)) {
             Storage::disk($document->disk)->delete($document->path);
         }

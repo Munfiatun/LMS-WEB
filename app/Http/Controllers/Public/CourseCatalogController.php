@@ -43,7 +43,7 @@ class CourseCatalogController extends Controller
             ->with([
                 'category',
                 'instructor',
-                'sections.materials' => fn ($q) => $q->published()->with('slidebook'),
+                'sections.materials' => fn ($q) => $q->published()->with('publishedSlidebook'),
             ])
             ->firstOrFail();
 

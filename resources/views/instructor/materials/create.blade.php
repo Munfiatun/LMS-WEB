@@ -44,12 +44,7 @@
                            class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div>
-                    <label for="status" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Status Publikasi</label>
-                    <select id="status" name="status"
-                            class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-indigo-500">
-                        <option value="draft" {{ old('status') == 'draft' ? 'selected' : '' }}>Draft (Hanya Pengajar)</option>
-                        <option value="published" {{ old('status') == 'published' ? 'selected' : '' }}>Published (Dapat diakses Siswa)</option>
-                    </select>
+                    <p class="text-xs text-slate-400">Publikasi dilakukan melalui action Publish setelah materi siap.</p>
                 </div>
             </div>
 

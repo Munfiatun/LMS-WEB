@@ -32,6 +32,7 @@ class MaterialDocumentPolicy
         }
 
         return $user->isStudent()
+            && $material->section->status === 'active'
             && $course->isPublished()
             && $material->status === LearningMaterial::STATUS_PUBLISHED
             && $course->enrollments()->where('student_id', $user->id)->where('status', 'active')->exists();

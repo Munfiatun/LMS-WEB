@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Instructor;
 use App\Http\Controllers\Controller;
 use App\Models\Slide;
 use App\Models\Slidebook;
+use App\Services\SlidebookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Gate;
 
 class SlideController extends Controller
 {
+    public function __construct(private SlidebookService $service) {}
+
     /**
      * Add a new slide to the slidebook.
      */
@@ -26,18 +29,7 @@ class SlideController extends Controller
             'summary' => ['nullable', 'string'],
         ]);
 
-        $maxOrder = (int) $slidebook->slides()->max('order');
-
-        $slidebook->slides()->create([
-            'title' => $validated['title'],
-            'subtitle' => $validated['subtitle'] ?? null,
-            'content' => $validated['content'],
-            'summary' => $validated['summary'] ?? null,
-            'order' => $maxOrder + 1,
-            'source_reference' => ['manual' => true],
-            'needs_review' => false,
-            'status' => 'active',
-        ]);
+        $this->service->addSlide($slidebook, $validated);
 
         return back()->with('success', 'Lembar slide baru berhasil ditambahkan.');
     }
@@ -57,13 +49,7 @@ class SlideController extends Controller
             'needs_review' => ['nullable', 'boolean'],
         ]);
 
-        $slide->update([
-            'title' => $validated['title'],
-            'subtitle' => $validated['subtitle'] ?? null,
-            'content' => $validated['content'],
-            'summary' => $validated['summary'] ?? null,
-            'needs_review' => $request->has('needs_review') ? $request->boolean('needs_review') : $slide->needs_review,
-        ]);
+        $this->service->updateSlide($slide, $validated);
 
         return back()->with('success', "Slide #{$slide->order} berhasil diperbarui.");
     }
@@ -75,12 +61,7 @@ class SlideController extends Controller
     {
         Gate::authorize('delete', $slide);
 
-        $slidebook = $slide->slidebook;
-        $slideOrder = $slide->order;
-        $slide->delete();
-
-        // Re-index remaining slides order
-        $slidebook->slides()->where('order', '>', $slideOrder)->decrement('order');
+        $this->service->deleteSlide($slide);
 
         return back()->with('success', 'Slide berhasil dihapus.');
     }
@@ -94,12 +75,10 @@ class SlideController extends Controller
 
         $validated = $request->validate([
             'slide_ids' => ['required', 'array'],
-            'slide_ids.*' => ['integer', 'exists:slides,id'],
+            'slide_ids.*' => ['integer', 'distinct', 'exists:slides,id'],
         ]);
 
-        foreach ($validated['slide_ids'] as $index => $slideId) {
-            $slidebook->slides()->where('id', $slideId)->update(['order' => $index + 1]);
-        }
+        $this->service->reorder($slidebook, $validated['slide_ids']);
 
         if ($request->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Urutan slide berhasil disimpan.']);

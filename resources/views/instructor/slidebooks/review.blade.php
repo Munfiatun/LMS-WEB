@@ -6,6 +6,9 @@
 @endphp
 
 @section('content')
+@if(in_array($slidebook->status, ['draft', 'review'], true) && $reviewErrors)
+    <p class="text-sm text-amber-300">{{ implode(' ', $reviewErrors) }}</p>
+@endif
 <div class="space-y-6" x-data="slidebookReviewManager()">
     {{-- Header & Control Bar --}}
     <div class="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 shadow-xl">
@@ -25,7 +28,7 @@
                     @elseif($slidebook->status === 'review')
                         <span class="px-2.5 py-1 text-xs font-bold uppercase rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse">Menunggu Review Guru</span>
                     @else
-                        <span class="px-2.5 py-1 text-xs font-bold uppercase rounded-full bg-slate-500/20 text-slate-300 border border-slate-500/30">Draft Disetujui</span>
+                        <span class="px-2.5 py-1 text-xs font-bold uppercase rounded-full bg-slate-500/20 text-slate-300 border border-slate-500/30">{{ $slidebook->approved_by ? 'Approved' : ucfirst($slidebook->status) }}</span>
                     @endif
                 </div>
                 <p class="text-xs text-slate-400 mt-1">{{ $slidebook->subtitle ?? 'Slide presentasi terstruktur berbasis ekstraksi AI' }} &bull; Total {{ $slidebook->slides->count() }} Lembar Slide</p>
@@ -36,6 +39,12 @@
                 @can('create', \App\Models\Quiz::class)
                     <a href="{{ route('instructor.quizzes.index', ['slidebook_id' => $slidebook->id]) }}" class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors">Generate Quiz with AI</a>
                 @endcan
+                @if($slidebook->isPublished())
+                    <form action="{{ route('instructor.slidebooks.revision', $slidebook) }}" method="POST">
+                        @csrf
+                        <button type="submit">Create Revision</button>
+                    </form>
+                @endif
                 {{-- Regenerate Form --}}
                 <form action="{{ route('instructor.materials.ai.slidebook', $material) }}" method="POST" onsubmit="return confirm('Regenerate akan membuat versi slidebook baru dari dokumen sumber. Lanjutkan?')">
                     @csrf
@@ -47,7 +56,7 @@
                 </form>
 
                 {{-- Approve Button (if in review) --}}
-                @if($slidebook->status === 'review')
+                @if($reviewErrors === [] && ! $slidebook->approved_by)
                     <form action="{{ route('instructor.slidebooks.approve', $slidebook) }}" method="POST">
                         @csrf
                         <button type="submit" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-colors flex items-center gap-1.5 shadow-sm">
@@ -58,13 +67,15 @@
                 @endif
 
                 {{-- Publish Button --}}
-                <form action="{{ route('instructor.slidebooks.publish', $slidebook) }}" method="POST" onsubmit="return confirm('Publikasikan slidebook ini ke siswa? Siswa yang terdaftar akan dapat langsung membaca materi ini.')">
+                @if($publicationErrors === [])
+<form action="{{ route('instructor.slidebooks.publish', $slidebook) }}" method="POST" onsubmit="return confirm('Publikasikan slidebook ini ke siswa? Siswa yang terdaftar akan dapat langsung membaca materi ini.')">
                     @csrf
                     <button type="submit" class="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-600/25 transition-all flex items-center gap-1.5">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                        {{ $slidebook->status === 'published' ? 'Perbarui Publikasi' : 'Rilis ke Siswa (Publish)' }}
+                        Rilis ke Siswa (Publish)
                     </button>
                 </form>
+@endif
 
                 @if($slidebook->status === 'published' || $slidebook->status === 'draft')
                     <a href="{{ route('instructor.slidebooks.preview', $slidebook) }}" target="_blank" class="px-3 py-2 text-xs font-semibold rounded-xl bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-200 border border-indigo-500/40 transition-colors flex items-center gap-1.5">
@@ -138,11 +149,13 @@
                         <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
                         <h2 class="text-sm font-bold text-white uppercase tracking-wider">Slidebook Deck (Human-in-the-Loop)</h2>
                     </div>
-                    <button type="button" @click="openAddSlideModal()"
+                    @if(in_array($slidebook->status, ['draft', 'review'], true))
+<button type="button" @click="openAddSlideModal()"
                             class="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors flex items-center gap-1 shadow-sm">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                         Tambah Slide
                     </button>
+@endif
                 </div>
 
                 {{-- Scrollable Slide Deck List --}}
@@ -178,6 +191,7 @@
                                         </span>
                                     @endif
 
+@if(in_array($slidebook->status, ['draft', 'review'], true))
                                     {{-- Edit & Delete Buttons --}}
                                     <button type="button" @click="openEditSlideModal(@js($slide))"
                                             class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors" title="Edit Slide">
@@ -191,6 +205,7 @@
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                         </button>
                                     </form>
+@endif
                                 </div>
                             </div>
 

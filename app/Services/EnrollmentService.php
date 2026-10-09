@@ -9,18 +9,31 @@ use App\Models\MaterialProgress;
 use App\Models\Quiz;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class EnrollmentService
 {
     /**
      * Daftarkan student ke sebuah course jika belum terdaftar.
      */
-    public function enrollStudent(Course $course, User $student): CourseEnrollment
+    public function enrollStudent(Course $course, User $student, ?string $code = null): CourseEnrollment
     {
-        return CourseEnrollment::firstOrCreate(
-            ['course_id' => $course->id, 'student_id' => $student->id],
-            ['status' => 'active', 'progress_percentage' => 0]
-        );
+        return DB::transaction(function () use ($course, $student, $code): CourseEnrollment {
+            $course = Course::whereKey($course->id)->lockForUpdate()->firstOrFail();
+            if (! $student->isStudent() || ! $student->is_active || ! $course->isPublished()
+                || ! $course->instructor?->is_active) {
+                throw ValidationException::withMessages(['enrollment_code' => 'Kursus belum dipublikasikan atau tidak tersedia untuk pendaftaran.']);
+            }
+            if ($code !== null && (! $course->enrollment_code || ! hash_equals($course->enrollment_code, strtoupper(trim($code))))) {
+                throw ValidationException::withMessages(['enrollment_code' => 'Token kelas tidak valid.']);
+            }
+
+            return CourseEnrollment::firstOrCreate(
+                ['course_id' => $course->id, 'student_id' => $student->id],
+                ['status' => 'active', 'progress_percentage' => 0]
+            );
+        });
     }
 
     /**
@@ -28,6 +41,8 @@ class EnrollmentService
      */
     public function markMaterialCompleted(LearningMaterial $material, User $student): MaterialProgress
     {
+        Gate::forUser($student)->authorize('view', $material);
+
         return DB::transaction(function () use ($material, $student) {
             $progress = MaterialProgress::updateOrCreate(
                 ['learning_material_id' => $material->id, 'student_id' => $student->id],
@@ -52,27 +67,17 @@ class EnrollmentService
             ->where('student_id', $student->id)
             ->first();
 
-        if (! $enrollment) {
+        if (! $enrollment || $enrollment->status === 'dropped') {
             return;
         }
 
-        // Get total materials and quizzes
-        $totalMaterials = LearningMaterial::whereHas('section', function ($q) use ($course) {
-            $q->where('course_id', $course->id);
-        })->where('status', 'published')->count();
-
-        $totalQuizzes = $course->quizzes()->where('status', 'published')->count();
+        $totalMaterials = $course->materials()->published()->count();
+        $totalQuizzes = $course->quizzes()->available()->count();
         $totalItems = $totalMaterials + $totalQuizzes;
-
-        if ($totalItems === 0) {
-            $enrollment->update(['progress_percentage' => 100, 'status' => 'completed', 'completed_at' => now()]);
-
-            return;
-        }
 
         // Completed materials
         $completedMaterials = MaterialProgress::where('student_id', $student->id)
-            ->whereHas('learningMaterial', fn ($query) => $query->where('status', 'published'))
+            ->whereHas('learningMaterial', fn ($query) => $query->published())
             ->whereHas('learningMaterial.section', function ($q) use ($course) {
                 $q->where('course_id', $course->id);
             })
@@ -80,7 +85,7 @@ class EnrollmentService
             ->count();
 
         // Completed quizzes (passed)
-        $completedQuizzes = $course->quizzes()->where('status', 'published')->whereHas('attempts', function ($q) use ($student) {
+        $completedQuizzes = $course->quizzes()->available()->whereHas('attempts', function ($q) use ($student) {
             $q->where('student_id', $student->id)
                 ->where('status', 'submitted')
                 ->whereColumn('percentage', '>=', 'quizzes.passing_score');
@@ -88,9 +93,9 @@ class EnrollmentService
 
         $completedItems = $completedMaterials + $completedQuizzes;
 
-        $percentage = ($completedItems / $totalItems) * 100;
+        $percentage = $totalItems > 0 ? ($completedItems / $totalItems) * 100 : 0;
 
-        $enrollment->progress_percentage = min(100, $percentage);
+        $enrollment->progress_percentage = max(0, min(100, $percentage));
 
         if ($enrollment->progress_percentage >= 100) {
             $enrollment->status = 'completed';

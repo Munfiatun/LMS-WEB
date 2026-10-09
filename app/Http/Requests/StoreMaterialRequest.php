@@ -33,11 +33,11 @@ class StoreMaterialRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
+
             'description' => ['nullable', 'string'],
             'content' => ['nullable', 'string'],
             'duration_minutes' => ['nullable', 'integer', 'min:0'],
-            'order' => ['nullable', 'integer', 'min:1'],
-            'status' => ['sometimes', 'in:draft,published'],
+            'status' => ['prohibited'],
         ];
     }
 }

@@ -80,6 +80,7 @@ Route::middleware(['auth', 'role:instructor'])
 
         // Course CRUD
         Route::resource('courses', InstructorCourseController::class)->except(['show']);
+        Route::post('/courses/{course}/archive', [InstructorCourseController::class, 'archive'])->name('courses.archive');
         Route::post('/courses/{course}/publish', [InstructorCourseController::class, 'publish'])->name('courses.publish');
         Route::get('/courses/{course}/analytics', [AnalyticsController::class, 'show'])->name('courses.analytics');
         Route::post('/courses/{course}/enrollment-code/regenerate', [InstructorCourseController::class, 'regenerateEnrollmentCode'])->name('courses.regenerate-code');
@@ -92,6 +93,8 @@ Route::middleware(['auth', 'role:instructor'])
         Route::get('/sections/{section}/materials/create', [InstructorMaterialController::class, 'create'])->name('materials.create');
         Route::post('/sections/{section}/materials', [InstructorMaterialController::class, 'store'])->name('materials.store');
         Route::get('/materials/{material}/edit', [InstructorMaterialController::class, 'edit'])->name('materials.edit');
+        Route::post('/materials/{material}/publish', [InstructorMaterialController::class, 'publish'])->name('materials.publish');
+        Route::post('/materials/{material}/unpublish', [InstructorMaterialController::class, 'unpublish'])->name('materials.unpublish');
         Route::put('/materials/{material}', [InstructorMaterialController::class, 'update'])->name('materials.update');
         Route::delete('/materials/{material}', [InstructorMaterialController::class, 'destroy'])->name('materials.destroy');
 
@@ -102,6 +105,7 @@ Route::middleware(['auth', 'role:instructor'])
         // AI Slidebook Generation & Review
         Route::post('/materials/{material}/ai/generate-slidebook', [AIProcessController::class, 'generateSlidebook'])->name('materials.ai.slidebook');
         Route::get('/materials/{material}/slidebook/review', [SlidebookReviewController::class, 'show'])->name('materials.slidebook.review');
+        Route::post('/slidebooks/{slidebook}/revision', [SlidebookReviewController::class, 'revision'])->name('slidebooks.revision');
         Route::post('/slidebooks/{slidebook}/approve', [SlidebookReviewController::class, 'approve'])->name('slidebooks.approve');
         Route::post('/slidebooks/{slidebook}/publish', [SlidebookReviewController::class, 'publish'])->name('slidebooks.publish');
         Route::get('/slidebooks/{slidebook}/preview', [SlidebookReviewController::class, 'preview'])->name('slidebooks.preview');
@@ -131,6 +135,7 @@ Route::middleware(['auth', 'role:instructor'])
         Route::resource('quizzes', QuizController::class)->except(['edit', 'update', 'destroy']);
         Route::get('/quizzes/{quiz}/builder', [QuizController::class, 'builder'])->name('quizzes.builder');
         Route::post('/quizzes/{quiz}/sync-questions', [QuizController::class, 'syncQuestions'])->name('quizzes.sync-questions');
+        Route::post('/quizzes/{quiz}/unpublish', [QuizController::class, 'unpublish'])->name('quizzes.unpublish');
         Route::post('/quizzes/{quiz}/publish', [QuizController::class, 'publish'])->name('quizzes.publish');
         Route::get('/quizzes/{quiz}/results', [QuizResultController::class, 'index'])->name('quizzes.results');
     });

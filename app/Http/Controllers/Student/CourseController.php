@@ -13,15 +13,15 @@ class CourseController extends Controller
     public function index(Request $request): View
     {
         $enrolledCourseIds = CourseEnrollment::where('student_id', $request->user()->id)
-            ->pluck('course_id');
+            ->whereIn('status', ['active', 'completed'])->pluck('course_id');
 
-        $courses = Course::whereIn('id', $enrolledCourseIds)
+        $courses = Course::published()->whereIn('id', $enrolledCourseIds)
             ->with([
-                'category', 
+                'category',
                 'instructor',
                 'enrollments' => function ($query) use ($request) {
                     $query->where('student_id', $request->user()->id);
-                }
+                },
             ])
             ->withCount(['sections', 'materials', 'quizzes'])
             ->latest()

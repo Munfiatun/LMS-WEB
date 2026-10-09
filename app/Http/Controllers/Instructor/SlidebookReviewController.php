@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Instructor;
 use App\Http\Controllers\Controller;
 use App\Models\LearningMaterial;
 use App\Models\Slidebook;
+use App\Services\SlidebookService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -12,6 +13,8 @@ use Illuminate\View\View;
 
 class SlidebookReviewController extends Controller
 {
+    public function __construct(private SlidebookService $service) {}
+
     /**
      * Show the side-by-side Slidebook review page.
      */
@@ -25,7 +28,7 @@ class SlidebookReviewController extends Controller
             'slidebooks' => fn ($q) => $q->with('slides')->latest('version'),
         ]);
 
-        $slidebook = $material->slidebooks->first();
+        $slidebook = $material->slidebooks()->with('material')->first();
 
         if (! $slidebook) {
             return redirect()
@@ -37,6 +40,8 @@ class SlidebookReviewController extends Controller
             'material' => $material,
             'slidebook' => $slidebook,
             'course' => $material->section->course,
+            'reviewErrors' => $this->service->reviewErrors($slidebook),
+            'publicationErrors' => $this->service->publicationErrors($slidebook),
         ]);
     }
 
@@ -68,10 +73,7 @@ class SlidebookReviewController extends Controller
     {
         Gate::authorize('approve', $slidebook);
 
-        $slidebook->update([
-            'status' => Slidebook::STATUS_DRAFT,
-            'approved_by' => $request->user()->id,
-        ]);
+        $this->service->approve($slidebook, $request->user());
 
         return back()->with('success', 'Slidebook berhasil disetujui (Approved) dan tersimpan sebagai draft siap rilis.');
     }
@@ -83,18 +85,17 @@ class SlidebookReviewController extends Controller
     {
         Gate::authorize('publish', $slidebook);
 
-        $slidebook->update([
-            'status' => Slidebook::STATUS_PUBLISHED,
-            'approved_by' => $request->user()->id,
-            'published_at' => now(),
-        ]);
-
-        // Publish material too if it is in review
-        $slidebook->material->update([
-            'status' => LearningMaterial::STATUS_PUBLISHED,
-            'published_at' => now(),
-        ]);
+        $this->service->publish($slidebook);
 
         return back()->with('success', 'Slidebook resmi dipublikasikan! Siswa yang terdaftar kini dapat membaca materi ini.');
+    }
+
+    public function revision(Request $request, Slidebook $slidebook): RedirectResponse
+    {
+        Gate::authorize('update', $slidebook);
+        $this->service->createRevision($slidebook, $request->user());
+
+        return redirect()->route('instructor.materials.slidebook.review', $slidebook->material_id)
+            ->with('success', 'Revision draft siap diedit. Versi published tetap tersedia untuk siswa.');
     }
 }

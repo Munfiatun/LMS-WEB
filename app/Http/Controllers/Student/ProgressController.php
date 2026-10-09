@@ -16,8 +16,8 @@ class ProgressController extends Controller
     public function complete(Request $request, LearningMaterial $material): RedirectResponse
     {
         $material->load('section.course');
-        Gate::authorize('view', $material);
         $material->section->course->enrollments()->where('student_id', $request->user()->id)->firstOrFail();
+        Gate::authorize('view', $material);
 
         $this->enrollmentService->markMaterialCompleted($material, auth()->user());
 

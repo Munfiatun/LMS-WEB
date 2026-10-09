@@ -13,7 +13,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        $enrollments = $user->courseEnrollments()->whereHas('course')->with('course.category')->get();
+        $enrollments = $user->courseEnrollments()->whereHas('course', fn ($query) => $query->published())->whereIn('status', ['active', 'completed'])->with('course.category')->get();
 
         $stats = [
             'enrolled_courses' => $enrollments->count(),

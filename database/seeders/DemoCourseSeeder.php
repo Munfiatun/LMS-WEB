@@ -92,9 +92,9 @@ class DemoCourseSeeder extends Seeder
             );
 
             // Generate enrollment code if null
-            if (!$course->enrollment_code) {
+            if (! $course->enrollment_code) {
                 $course->update([
-                    'enrollment_code' => $course->generateEnrollmentCode()
+                    'enrollment_code' => $course->generateEnrollmentCode(),
                 ]);
             }
 
@@ -109,10 +109,10 @@ class DemoCourseSeeder extends Seeder
 
                 for ($i = 1; $i <= 3; $i++) {
                     $section->materials()->create([
-                        'title' => 'Materi ' . $i,
-                        'slug' => Str::slug($data['title'] . ' materi ' . $i),
-                        'description' => 'Deskripsi materi ke-' . $i . ' untuk kelas ' . $data['title'],
-                        'content' => '<p>Konten dari materi ke-' . $i . ' berjalan di sini.</p>',
+                        'title' => 'Materi '.$i,
+                        'slug' => Str::slug($data['title'].' materi '.$i),
+                        'description' => 'Deskripsi materi ke-'.$i.' untuk kelas '.$data['title'],
+                        'content' => '<p>Konten dari materi ke-'.$i.' berjalan di sini.</p>',
                         'duration_minutes' => 15 * $i,
                         'order' => $i,
                         'status' => 'published',

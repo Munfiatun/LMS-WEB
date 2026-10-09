@@ -137,6 +137,8 @@ class SlidebookPipelineTest extends TestCase
             'created_by' => $this->instructor->id,
         ]);
 
+        $slidebook->slides()->create(['title' => 'Materi siap review', 'content' => 'Konten pembelajaran valid.', 'order' => 1, 'status' => 'active']);
+
         $response = $this->actingAs($this->instructor)
             ->post(route('instructor.slidebooks.approve', $slidebook));
 
@@ -159,6 +161,9 @@ class SlidebookPipelineTest extends TestCase
             'version' => 1,
             'created_by' => $this->instructor->id,
         ]);
+
+        $slidebook->slides()->create(['title' => 'Materi siap review', 'content' => 'Konten pembelajaran valid.', 'order' => 1, 'status' => 'active']);
+        $this->actingAs($this->instructor)->post(route('instructor.slidebooks.approve', $slidebook))->assertSessionHas('success');
 
         $response = $this->actingAs($this->instructor)
             ->post(route('instructor.slidebooks.publish', $slidebook));

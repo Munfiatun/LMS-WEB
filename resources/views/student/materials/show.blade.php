@@ -50,10 +50,10 @@
     <!-- Konten Materi -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">
-            @if($material->slidebook && $material->slidebook->isPublished())
+            @if($material->publishedSlidebook && $material->publishedSlidebook->isPublished())
                 <!-- Tampilkan Slidebook Viewer Existing dalam iframe agar tidak kehilangan konteks Navigasi Kursus -->
                 <div class="w-full h-[650px] rounded-2xl bg-slate-950 border border-slate-800 shadow-xl overflow-hidden relative">
-                    <iframe src="{{ route('student.slidebooks.show', $material->slidebook) }}" class="w-full h-full border-none"></iframe>
+                    <iframe src="{{ route('student.slidebooks.show', $material->publishedSlidebook) }}" class="w-full h-full border-none"></iframe>
                 </div>
             @endif
 

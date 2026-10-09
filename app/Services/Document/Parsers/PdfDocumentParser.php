@@ -3,6 +3,7 @@
 namespace App\Services\Document\Parsers;
 
 use App\Services\Document\Contracts\DocumentParserInterface;
+use ErrorException;
 use RuntimeException;
 
 class PdfDocumentParser implements DocumentParserInterface
@@ -40,34 +41,35 @@ class PdfDocumentParser implements DocumentParserInterface
             $pageCount = max(1, (int) $countMatch[1]);
         }
 
-        // Extract text from stream objects
-        $extractedText = '';
-        $streamMatches = [];
-
-        preg_match_all('/stream[\r\n]+(.*?)[\r\n]+endstream/s', $rawContent, $streamMatches);
-
-        if (! empty($streamMatches[1])) {
-            foreach ($streamMatches[1] as $streamData) {
-                // Try decompressing FlateDecode
-                $uncompressed = @gzuncompress($streamData);
-                $dataToParse = ($uncompressed !== false) ? $uncompressed : $streamData;
-
-                $text = $this->extractTextFromStream($dataToParse);
-                if ($text !== '') {
-                    $extractedText .= $text."\n\n";
-                }
-            }
+        if (preg_match('/\/Encrypt\b/', $rawContent)) {
+            throw new RuntimeException('Encrypted PDF is not supported');
         }
 
-        // Fallback: If no stream text found, scan for direct Tj/TJ in raw text
-        if (trim($extractedText) === '') {
-            $fallback = $this->extractTextFromStream($rawContent);
-            if (trim($fallback) !== '') {
-                $extractedText = $fallback;
+        $extractedText = '';
+        preg_match_all('/\d+\s+\d+\s+obj\s*<<((?:(?!endobj|obj).)*?)>>\s*stream\r?\n(.*?)\r?\nendstream/s', $rawContent, $streams, PREG_SET_ORDER);
+        foreach ($streams as $stream) {
+            $dictionary = $stream[1];
+            if (preg_match('/\/Subtype\s*\/Image\b/', $dictionary)) {
+                continue;
+            }
+            $data = $stream[2];
+            if (preg_match('/\/Filter\s*(\[[^\]]*\]|\/[A-Za-z0-9]+)/', $dictionary, $filter)) {
+                $filterName = trim($filter[1], "[] \t\r\n");
+                if ($filterName !== '/FlateDecode') {
+                    throw new RuntimeException('Unsupported PDF stream filter');
+                }
+                $data = $this->decompressStream($data);
+            }
+            $text = $this->extractTextFromStream($data);
+            if ($text !== '') {
+                $extractedText .= $text."\n\n";
             }
         }
 
         $cleanedContent = $this->cleanExtractedText($extractedText);
+        if ($cleanedContent === '') {
+            throw new RuntimeException('PDF contains no supported extractable text');
+        }
         $characterCount = mb_strlen($cleanedContent);
         $wordCount = str_word_count(strip_tags($cleanedContent));
 
@@ -81,6 +83,25 @@ class PdfDocumentParser implements DocumentParserInterface
                 'parser' => 'PdfDocumentParser',
             ],
         ];
+    }
+
+    private function decompressStream(string $data): string
+    {
+        set_error_handler(static function (int $severity, string $message): never {
+            throw new ErrorException('Invalid compressed PDF stream', 0, $severity);
+        }, E_WARNING);
+        try {
+            $decoded = gzuncompress($data, 20 * 1024 * 1024);
+            if ($decoded === false) {
+                throw new RuntimeException('Invalid compressed PDF stream');
+            }
+
+            return $decoded;
+        } catch (ErrorException $exception) {
+            throw new RuntimeException('Invalid compressed PDF stream', previous: $exception);
+        } finally {
+            restore_error_handler();
+        }
     }
 
     /**

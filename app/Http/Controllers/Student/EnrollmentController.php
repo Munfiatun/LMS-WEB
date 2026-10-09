@@ -18,18 +18,10 @@ class EnrollmentController extends Controller
             'enrollment_code' => ['required', 'string'],
         ]);
 
-        $token = strtoupper(trim($request->input('enrollment_code')));
-
-        if ($course->enrollment_code !== $token) {
-            return back()->with('error', 'Token kelas tidak valid.');
+        $enrollment = $this->enrollmentService->enrollStudent($course, $request->user(), $request->string('enrollment_code')->toString());
+        if (! $enrollment->wasRecentlyCreated) {
+            return back()->with('info', 'Anda sudah terdaftar pada kelas ini.');
         }
-
-        $enrollment = $course->enrollments()->where('student_id', auth()->id())->first();
-        if ($enrollment) {
-            return back()->with('error', 'Anda sudah terdaftar pada kelas ini.');
-        }
-
-        $this->enrollmentService->enrollStudent($course, auth()->user());
 
         return redirect()->route('student.courses.index')->with('success', 'Berhasil bergabung ke kelas.');
     }
@@ -37,7 +29,7 @@ class EnrollmentController extends Controller
     public function continue(Course $course)
     {
         Gate::authorize('view', $course);
-        $enrollment = $course->enrollments()->where('student_id', auth()->id())->first();
+        $enrollment = $course->enrollments()->where('student_id', auth()->id())->where('status', 'active')->first();
 
         if (! $enrollment) {
             return redirect()->route('courses.show', $course->slug);

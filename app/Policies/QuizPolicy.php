@@ -20,16 +20,16 @@ class QuizPolicy
      */
     public function view(User $user, Quiz $quiz): bool
     {
-        if ($user->isAdmin() || $user->id === $quiz->course->instructor_id) {
+        if ($user->isAdmin() || ($user->isInstructor() && $user->id === $quiz->course?->instructor_id)) {
             return true;
         }
 
         if ($user->isStudent()) {
-            if ($quiz->status !== 'published') {
+            if (! $user->is_active || ! $quiz->course?->isPublished() || ! $quiz->newQuery()->available()->whereKey($quiz->id)->exists()) {
                 return false;
             }
 
-            return $quiz->course->enrollments()->where('student_id', $user->id)->exists();
+            return $quiz->course->enrollments()->where('student_id', $user->id)->whereIn('status', ['active', 'completed'])->exists();
         }
 
         return false;

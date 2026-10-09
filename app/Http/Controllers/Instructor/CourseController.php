@@ -42,7 +42,7 @@ class CourseController extends Controller
         return redirect()->route('instructor.courses.edit', $course)->with('success', 'Kursus berhasil dibuat. Silakan tambahkan chapter dan materi pembelajaran.');
     }
 
-    public function edit(Course $course): View
+    public function edit(Course $course, CourseService $service): View
     {
         Gate::authorize('update', $course);
 
@@ -53,7 +53,9 @@ class CourseController extends Controller
 
         $categories = Category::orderBy('name')->get();
 
-        return view('instructor.courses.edit', compact('course', 'categories'));
+        $publicationErrors = $service->publicationErrors($course);
+
+        return view('instructor.courses.edit', compact('course', 'categories', 'publicationErrors'));
     }
 
     public function update(UpdateCourseRequest $request, Course $course, CourseService $service): RedirectResponse
@@ -76,13 +78,17 @@ class CourseController extends Controller
     {
         Gate::authorize('update', $course);
 
-        if ($course->materials()->count() === 0) {
-            return back()->with('error', 'Kursus harus memiliki minimal satu materi pembelajaran sebelum dipublikasikan.');
-        }
-
         $service->publishCourse($course);
 
         return back()->with('success', 'Kursus berhasil dipublikasikan dan kini dapat diakses oleh siswa.');
+    }
+
+    public function archive(Course $course, CourseService $service): RedirectResponse
+    {
+        Gate::authorize('update', $course);
+        $service->archiveCourse($course);
+
+        return back()->with('success', 'Kursus berhasil diarsipkan.');
     }
 
     public function regenerateEnrollmentCode(Course $course): RedirectResponse

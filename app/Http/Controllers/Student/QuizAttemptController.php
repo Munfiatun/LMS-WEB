@@ -59,7 +59,7 @@ class QuizAttemptController extends Controller
         Gate::authorize('update', $attempt);
 
         if ($attempt->status === 'in_progress' && $attempt->expires_at && now()->greaterThanOrEqualTo($attempt->expires_at)) {
-            $this->quizAttemptService->submitAttempt($attempt, []);
+            $attempt = $this->quizAttemptService->submitAttempt($attempt, []);
         }
 
         if ($attempt->status !== 'in_progress') {

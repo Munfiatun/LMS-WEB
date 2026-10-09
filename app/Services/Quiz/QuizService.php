@@ -3,7 +3,9 @@
 namespace App\Services\Quiz;
 
 use App\Models\Course;
+use App\Models\Question;
 use App\Models\Quiz;
+use App\Models\QuizAttemptQuestion;
 use App\Models\QuizQuestion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -18,6 +20,8 @@ class QuizService
     public function createQuiz(Course $course, array $data): Quiz
     {
         $data['course_id'] = $course->id;
+        $data['status'] = 'draft';
+        $data['published_at'] = null;
         $this->validateSection($data);
 
         return $course->quizzes()->create($data);
@@ -28,6 +32,8 @@ class QuizService
      */
     public function updateQuiz(Quiz $quiz, array $data): Quiz
     {
+        $this->assertEditable($quiz);
+        unset($data['status'], $data['published_at']);
         $this->validateSection(array_merge($quiz->only(['course_id', 'section_id']), $data));
         $quiz->update($data);
 
@@ -51,6 +57,8 @@ class QuizService
     public function syncQuestions(Quiz $quiz, array $questionsData): void
     {
         DB::transaction(function () use ($quiz, $questionsData) {
+            $quiz = Quiz::whereKey($quiz->id)->lockForUpdate()->firstOrFail();
+            $this->assertEditable($quiz);
             $quiz->quizQuestions()->delete();
 
             foreach ($questionsData as $data) {
@@ -62,31 +70,87 @@ class QuizService
                 ]);
             }
 
-            $quiz->update(['total_questions' => count($questionsData), 'status' => 'draft', 'published_at' => null]);
+            $quiz->update(['total_questions' => count($questionsData)]);
         });
     }
 
-    public function publishQuiz(Quiz $quiz): void
+    public function assertEditable(Quiz $quiz): void
     {
-        $questions = $quiz->questions()->with('options')->get();
-        if ($questions->isEmpty()) {
-            throw ValidationException::withMessages(['quiz' => 'Quiz harus memiliki minimal satu soal.']);
+        if ($quiz->status !== 'draft' || $quiz->attempts()->exists()) {
+            throw ValidationException::withMessages(['quiz' => 'Quiz published atau yang memiliki attempt tidak dapat diedit. Batalkan publikasi quiz yang belum dikerjakan terlebih dahulu.']);
+        }
+    }
+
+    public function assertQuestionEditable(Question $question): void
+    {
+        if (Quiz::where('status', 'published')->whereHas('quizQuestions', fn ($query) => $query->where('question_id', $question->id))->exists()
+            || QuizAttemptQuestion::where('question_id', $question->id)->exists()) {
+            throw ValidationException::withMessages(['question' => 'Soal pada quiz published atau histori attempt tidak dapat diubah/dihapus. Buat soal baru.']);
+        }
+    }
+
+    public function unpublishQuiz(Quiz $quiz): void
+    {
+        DB::transaction(function () use ($quiz): void {
+            $quiz = Quiz::whereKey($quiz->id)->lockForUpdate()->firstOrFail();
+            if ($quiz->status !== 'published' || $quiz->attempts()->exists()) {
+                throw ValidationException::withMessages(['quiz' => 'Hanya quiz published tanpa attempt yang dapat dikembalikan ke draft.']);
+            }
+            $quiz->update(['status' => 'draft', 'published_at' => null]);
+        });
+    }
+
+    /** @return list<string> */
+    public function publicationErrors(Quiz $quiz): array
+    {
+        $quiz->loadMissing('course.instructor.role');
+        if ($quiz->status !== 'draft' || ! $quiz->course || $quiz->course->status === 'archived'
+            || ! $quiz->course->instructor?->is_active || ! $quiz->course->instructor->isInstructor()) {
+            return ['Quiz harus draft dan berada pada kursus valid dengan instruktur aktif.'];
+        }
+        try {
+            $this->validateSection($quiz->only(['course_id', 'section_id']));
+            Validator::make($quiz->toArray(), [
+                'title' => ['required', 'string'], 'passing_score' => ['required', 'integer', 'between:0,100'],
+                'total_questions' => ['required', 'integer', 'min:1'], 'max_attempts' => ['required', 'integer', 'min:1'],
+                'duration_minutes' => ['nullable', 'integer', 'min:1'],
+            ])->validate();
+        } catch (ValidationException $exception) {
+            return ['Konfigurasi quiz atau relasi course/chapter tidak valid.'];
+        }
+        if ($quiz->section_id && $quiz->section?->status !== 'active') {
+            return ['Chapter quiz harus aktif.'];
+        }
+        $questions = $quiz->questions()->with(['options', 'questionBank'])->get();
+        if ($questions->isEmpty() || $questions->count() < $quiz->total_questions) {
+            return ['Quiz harus memiliki soal sesuai jumlah yang ditentukan.'];
         }
         foreach ($questions as $question) {
             if (trim(strip_tags($question->question_text)) === ''
+                || $question->questionBank?->instructor_id !== $quiz->course->instructor_id
                 || ! in_array($question->type, ['multiple_choice', 'true_false'], true)
                 || $question->needs_review || $question->status !== 'approved'
+                || $question->pivot->points < 1
                 || $question->options->count() < 2
                 || ($question->type === 'true_false' && $question->options->count() !== 2)
                 || $question->options->contains(fn ($option): bool => trim($option->option_text) === '')
                 || $question->options->where('is_correct', true)->count() !== 1
                 || $question->options->map(fn ($option): string => mb_strtolower(trim($option->option_text)))->unique()->count() !== $question->options->count()) {
-                throw ValidationException::withMessages(['quiz' => 'Periksa dan verifikasi semua soal serta kunci jawaban sebelum menerbitkan Quiz.']);
+                return ['Periksa dan verifikasi semua soal serta kunci jawaban sebelum menerbitkan Quiz.'];
             }
         }
-        $quiz->update([
-            'status' => 'published',
-            'published_at' => now(),
-        ]);
+
+        return [];
+    }
+
+    public function publishQuiz(Quiz $quiz): void
+    {
+        DB::transaction(function () use ($quiz): void {
+            $quiz = Quiz::whereKey($quiz->id)->lockForUpdate()->firstOrFail();
+            if ($errors = $this->publicationErrors($quiz)) {
+                throw ValidationException::withMessages(['quiz' => $errors]);
+            }
+            $quiz->update(['status' => 'published', 'published_at' => now()]);
+        });
     }
 }

@@ -15,14 +15,14 @@ class MaterialController extends Controller
         $material->load('section.course');
         abort_unless($material->section->course_id === $course->id, 404);
         Gate::authorize('view', $course);
-        Gate::authorize('view', $material);
 
         // Pastikan student terdaftar
         $enrollment = $course->enrollments()->where('student_id', auth()->id())->firstOrFail();
+        Gate::authorize('view', $material);
 
         // Eager load relasi yang dibutuhkan view untuk mencegah LazyLoadingViolationException
-        $course->load(['sections.materials' => fn ($query) => $query->published(), 'quizzes' => fn ($query) => $query->where('status', 'published')]);
-        $material->load(['slidebook', 'documents']);
+        $course->load(['sections.materials' => fn ($query) => $query->published(), 'quizzes' => fn ($query) => $query->available()]);
+        $material->load(['publishedSlidebook', 'documents']);
 
         // Update last accessed
         $enrollment->last_accessed_material_id = $material->id;

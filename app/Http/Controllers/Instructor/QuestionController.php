@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Question;
 use App\Models\QuestionBank;
 use App\Models\QuestionOption;
-use App\Models\Quiz;
+use App\Services\Quiz\QuizService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Gate;
 
 class QuestionController extends Controller
 {
+    public function __construct(private QuizService $quizService) {}
+
     /**
      * Store a newly created question with options in the bank.
      */
@@ -69,6 +71,7 @@ class QuestionController extends Controller
     public function update(Request $request, Question $question): RedirectResponse
     {
         Gate::authorize('update', $question);
+        $this->quizService->assertQuestionEditable($question);
 
         $validated = $request->validate([
             'question_text' => ['required', 'string'],
@@ -91,9 +94,6 @@ class QuestionController extends Controller
                 'needs_review' => false, // Review verified on manual edit
                 'status' => Question::STATUS_APPROVED,
             ]);
-
-            Quiz::whereHas('quizQuestions', fn ($query) => $query->where('question_id', $question->id))
-                ->update(['status' => 'draft', 'published_at' => null]);
 
             // Replace options
             $question->options()->delete();
@@ -118,11 +118,10 @@ class QuestionController extends Controller
     public function destroy(Request $request, Question $question): RedirectResponse
     {
         Gate::authorize('delete', $question);
+        $this->quizService->assertQuestionEditable($question);
 
         $bank = $question->questionBank;
         $order = $question->order;
-        Quiz::whereHas('quizQuestions', fn ($query) => $query->where('question_id', $question->id))
-            ->update(['status' => 'draft', 'published_at' => null]);
         $question->delete();
 
         // Re-order remaining questions
@@ -137,6 +136,7 @@ class QuestionController extends Controller
     public function approve(Request $request, Question $question): RedirectResponse
     {
         Gate::authorize('approve', $question);
+        $this->quizService->assertQuestionEditable($question);
 
         $question->update([
             'needs_review' => false,

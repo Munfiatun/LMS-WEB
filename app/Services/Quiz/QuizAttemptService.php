@@ -9,89 +9,99 @@ use App\Models\QuizAttemptOption;
 use App\Models\QuizAttemptQuestion;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class QuizAttemptService
 {
     public function startAttempt(Quiz $quiz, User $student): QuizAttempt
     {
-        // Validation rules
-        if ($quiz->status !== 'published') {
-            throw ValidationException::withMessages(['quiz' => 'Quiz is not published.']);
-        }
-
-        $activeAttempt = QuizAttempt::where('quiz_id', $quiz->id)
-            ->where('student_id', $student->id)
-            ->where('status', 'in_progress')
-            ->first();
-
-        if ($activeAttempt) {
-            if (! $activeAttempt->expires_at || now()->lt($activeAttempt->expires_at)) {
-                return $activeAttempt;
+        $result = DB::transaction(function () use ($quiz, $student): QuizAttempt|ValidationException {
+            $quiz = Quiz::whereKey($quiz->id)->lockForUpdate()->firstOrFail();
+            Gate::forUser($student)->authorize('view', $quiz);
+            // Validation rules
+            if ($quiz->status !== 'published') {
+                throw ValidationException::withMessages(['quiz' => 'Quiz is not published.']);
             }
 
-            $this->submitAttempt($activeAttempt, []);
-        }
+            $activeAttempt = QuizAttempt::where('quiz_id', $quiz->id)
+                ->where('student_id', $student->id)
+                ->where('status', 'in_progress')
+                ->first();
 
-        $attemptsCount = QuizAttempt::where('quiz_id', $quiz->id)
-            ->where('student_id', $student->id)
-            ->count();
+            if ($activeAttempt) {
+                if (! $activeAttempt->expires_at || now()->lt($activeAttempt->expires_at)) {
+                    return $activeAttempt;
+                }
 
-        if ($attemptsCount >= $quiz->max_attempts) {
-            throw ValidationException::withMessages(['quiz' => 'Maximum attempts reached.']);
-        }
-
-        return DB::transaction(function () use ($quiz, $student) {
-            $startedAt = now();
-            $expiresAt = $quiz->duration_minutes ? $startedAt->copy()->addMinutes($quiz->duration_minutes) : $startedAt->copy()->addYears(100);
-
-            $attempt = QuizAttempt::create([
-                'quiz_id' => $quiz->id,
-                'student_id' => $student->id,
-                'started_at' => $startedAt,
-                'expires_at' => $expiresAt,
-                'status' => 'in_progress',
-            ]);
-
-            // Snapshotting questions
-            $questionsQuery = $quiz->questions();
-            if ($quiz->randomize_questions) {
-                $questionsQuery->inRandomOrder();
-            } else {
-                $questionsQuery->orderByPivot('order');
+                $this->submitAttempt($activeAttempt, []);
             }
 
-            // Limit to total_questions defined in quiz config
-            $questions = $questionsQuery->take($quiz->total_questions)->get();
+            $attemptsCount = QuizAttempt::where('quiz_id', $quiz->id)
+                ->where('student_id', $student->id)
+                ->count();
 
-            $order = 1;
-            foreach ($questions as $question) {
-                $attemptQuestion = QuizAttemptQuestion::create([
-                    'attempt_id' => $attempt->id,
-                    'question_id' => $question->id,
-                    'order' => $order++,
+            if ($attemptsCount >= $quiz->max_attempts) {
+                return ValidationException::withMessages(['quiz' => 'Maximum attempts reached.']);
+            }
+
+            return DB::transaction(function () use ($quiz, $student) {
+                $startedAt = now();
+                $expiresAt = $quiz->duration_minutes ? $startedAt->copy()->addMinutes($quiz->duration_minutes) : $startedAt->copy()->addYears(100);
+
+                $attempt = QuizAttempt::create([
+                    'quiz_id' => $quiz->id,
+                    'student_id' => $student->id,
+                    'started_at' => $startedAt,
+                    'expires_at' => $expiresAt,
+                    'status' => 'in_progress',
                 ]);
 
-                $optionsQuery = $question->options();
-                if ($quiz->randomize_options) {
-                    $optionsQuery->inRandomOrder();
+                // Snapshotting questions
+                $questionsQuery = $quiz->questions();
+                if ($quiz->randomize_questions) {
+                    $questionsQuery->inRandomOrder();
                 } else {
-                    $optionsQuery->orderBy('id');
+                    $questionsQuery->orderByPivot('order');
                 }
 
-                $options = $optionsQuery->get();
-                $optionOrder = 1;
-                foreach ($options as $option) {
-                    QuizAttemptOption::create([
-                        'attempt_question_id' => $attemptQuestion->id,
-                        'option_id' => $option->id,
-                        'order' => $optionOrder++,
+                // Limit to total_questions defined in quiz config
+                $questions = $questionsQuery->take($quiz->total_questions)->get();
+
+                $order = 1;
+                foreach ($questions as $question) {
+                    $attemptQuestion = QuizAttemptQuestion::create([
+                        'attempt_id' => $attempt->id,
+                        'question_id' => $question->id,
+                        'order' => $order++,
                     ]);
-                }
-            }
 
-            return $attempt;
+                    $optionsQuery = $question->options();
+                    if ($quiz->randomize_options) {
+                        $optionsQuery->inRandomOrder();
+                    } else {
+                        $optionsQuery->orderBy('id');
+                    }
+
+                    $options = $optionsQuery->get();
+                    $optionOrder = 1;
+                    foreach ($options as $option) {
+                        QuizAttemptOption::create([
+                            'attempt_question_id' => $attemptQuestion->id,
+                            'option_id' => $option->id,
+                            'order' => $optionOrder++,
+                        ]);
+                    }
+                }
+
+                return $attempt;
+            });
         });
+        if ($result instanceof ValidationException) {
+            throw $result;
+        }
+
+        return $result;
     }
 
     /**
@@ -99,11 +109,11 @@ class QuizAttemptService
      */
     public function submitAttempt(QuizAttempt $attempt, array $answers): QuizAttempt
     {
-        if ($attempt->status !== 'in_progress') {
-            throw ValidationException::withMessages(['attempt' => 'Attempt is already finished.']);
-        }
-
         return DB::transaction(function () use ($attempt, $answers) {
+            $attempt = QuizAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+            if ($attempt->status !== 'in_progress') {
+                throw ValidationException::withMessages(['attempt' => 'Attempt is already finished.']);
+            }
             $now = now();
 
             // Check Server-Authoritative Timer

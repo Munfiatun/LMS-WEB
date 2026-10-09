@@ -6,6 +6,9 @@
 @endphp
 
 @section('content')
+@if($course->status === 'draft' && $publicationErrors)
+    <p class="text-sm text-amber-300">{{ implode(' ', $publicationErrors) }}</p>
+@endif
 <div class="space-y-8" x-data="{ addSectionModal: false }">
     <!-- Top Action Bar -->
     <div class="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -21,7 +24,7 @@
                 @if($course->status === 'published')
                     <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Published</span>
                 @else
-                    <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Draft</span>
+                    <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">{{ ucfirst($course->status) }}</span>
                 @endif
             </div>
             <h1 class="text-2xl font-extrabold text-white tracking-tight">{{ $course->title }}</h1>
@@ -29,7 +32,7 @@
         </div>
 
         <div class="flex items-center gap-3">
-            @if($course->status !== 'published')
+            @if($publicationErrors === [])
                 <form action="{{ route('instructor.courses.publish', $course) }}" method="POST">
                     @csrf
                     <button type="submit" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1.5">
@@ -37,7 +40,11 @@
                         Publikasikan Kursus
                     </button>
                 </form>
-            @else
+            @elseif($course->status === 'published')
+                <form action="{{ route('instructor.courses.archive', $course) }}" method="POST">
+                    @csrf
+                    <button type="submit">Arsipkan Kursus</button>
+                </form>
                 <span class="text-xs text-emerald-400 flex items-center gap-1 bg-emerald-950/60 border border-emerald-800/40 px-3 py-1.5 rounded-xl">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     Kursus Aktif & Terbit

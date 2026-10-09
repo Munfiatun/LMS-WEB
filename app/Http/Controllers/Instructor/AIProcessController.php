@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class AIProcessController extends Controller
@@ -35,6 +36,8 @@ class AIProcessController extends Controller
             return redirect()
                 ->route('instructor.materials.slidebook.review', $material)
                 ->with('success', 'Slidebook berhasil dibuat oleh AI dan siap untuk ditinjau!');
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (Throwable $e) {
             Log::error('AI slidebook processing failed', ['exception_type' => $e::class, 'material_id' => $material->id]);
 

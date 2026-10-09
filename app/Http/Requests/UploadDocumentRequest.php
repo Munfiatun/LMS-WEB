@@ -30,6 +30,7 @@ class UploadDocumentRequest extends FormRequest
                 'required',
                 'file',
                 'mimes:pdf,docx',
+                'extensions:pdf,docx',
                 'max:20480', // 20 MB max
             ],
         ];

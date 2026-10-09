@@ -157,6 +157,8 @@ class CourseManagementTest extends TestCase
         LearningMaterial::create([
             'section_id' => $section->id,
             'title' => 'Materi 1',
+            'content' => 'Konten yang siap dipelajari.',
+            'status' => 'published',
             'order' => 1,
         ]);
 
@@ -178,7 +180,7 @@ class CourseManagementTest extends TestCase
             ->post(route('instructor.courses.publish', $course));
 
         $response->assertRedirect();
-        $response->assertSessionHas('error');
+        $response->assertSessionHasErrors('course');
         $this->assertDatabaseHas('courses', [
             'id' => $course->id,
             'status' => Course::STATUS_DRAFT,
@@ -485,5 +487,80 @@ class CourseManagementTest extends TestCase
         ]);
 
         return [$course, $section, $material];
+    }
+
+    /**
+     * Test that creating a course with a status field is prohibited.
+     */
+    public function test_instructor_cannot_set_status_on_course_creation(): void
+    {
+        $response = $this->actingAs($this->instructor)
+            ->post(route('instructor.courses.store'), [
+                'title' => 'Protected Course',
+                'category_id' => $this->category->id,
+                'description' => 'Should stay draft.',
+                'status' => Course::STATUS_PUBLISHED,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors('status');
+        $this->assertDatabaseMissing('courses', ['title' => 'Protected Course', 'status' => Course::STATUS_PUBLISHED]);
+    }
+
+    /**
+     * Test that updating a course with a status field is prohibited.
+     */
+    public function test_instructor_cannot_update_status_on_course(): void
+    {
+        $course = $this->createCourse($this->instructor);
+        $response = $this->actingAs($this->instructor)
+            ->put(route('instructor.courses.update', $course), [
+                'title' => $course->title,
+                'category_id' => $this->category->id,
+                'description' => $course->description,
+                'status' => Course::STATUS_PUBLISHED,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors('status');
+        $this->assertDatabaseHas('courses', ['id' => $course->id, 'status' => Course::STATUS_DRAFT]);
+    }
+
+    /**
+     * Test that creating a material with a status field is prohibited.
+     */
+    public function test_instructor_cannot_set_status_on_material_creation(): void
+    {
+        $course = $this->createCourse($this->instructor);
+        $section = CourseSection::create(['course_id' => $course->id, 'title' => 'Sec', 'order' => 1]);
+        $response = $this->actingAs($this->instructor)
+            ->post(route('instructor.materials.store', $section), [
+                'title' => 'Material with status',
+                'description' => 'Desc',
+                'status' => LearningMaterial::STATUS_PUBLISHED,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors('status');
+        $this->assertDatabaseMissing('learning_materials', ['title' => 'Material with status', 'status' => LearningMaterial::STATUS_PUBLISHED]);
+    }
+
+    /**
+     * Test that updating a material with a status field is prohibited.
+     */
+    public function test_instructor_cannot_update_status_on_material(): void
+    {
+        [$course, $section, $material] = $this->createFullMaterial($this->instructor);
+        $response = $this->actingAs($this->instructor)
+            ->put(route('instructor.materials.update', $material), [
+                'title' => $material->title,
+                'description' => $material->description,
+                'status' => LearningMaterial::STATUS_PUBLISHED,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors('status');
+        $material->refresh();
+        $this->assertEquals(LearningMaterial::STATUS_DRAFT, $material->status);
     }
 }

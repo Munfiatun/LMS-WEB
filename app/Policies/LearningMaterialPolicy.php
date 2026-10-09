@@ -13,15 +13,18 @@ class LearningMaterialPolicy
      */
     public function view(?User $user, LearningMaterial $learningMaterial): bool
     {
-        if ($learningMaterial->status === LearningMaterial::STATUS_PUBLISHED && $learningMaterial->section->course->isPublished()) {
+        if (! $user || ! $user->is_active) {
+            return false;
+        }
+        $course = $learningMaterial->section?->course;
+        if ($user->isAdmin() || ($user->isInstructor() && $user->id === $course?->instructor_id)) {
             return true;
         }
 
-        if (! $user) {
-            return false;
-        }
-
-        return $user->isAdmin() || $user->id === $learningMaterial->section->course->instructor_id;
+        return $user->isStudent() && $course?->isPublished()
+            && $learningMaterial->status === LearningMaterial::STATUS_PUBLISHED
+            && $learningMaterial->section->status === 'active'
+            && $course->enrollments()->where('student_id', $user->id)->whereIn('status', ['active', 'completed'])->exists();
     }
 
     /**

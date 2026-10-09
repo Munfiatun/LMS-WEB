@@ -8,7 +8,10 @@ use App\Models\Slide;
 use App\Models\Slidebook;
 use App\Models\User;
 use App\Services\Document\DocumentService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 class AISlidebookService
@@ -21,6 +24,30 @@ class AISlidebookService
      * Generate structured slidebook from learning material's extracted documents.
      */
     public function generateSlidebookForMaterial(LearningMaterial $material, User $creator, bool $forceRegenerate = false): Slidebook
+    {
+        $timeout = max(60, (int) config('ai.providers.'.config('ai.provider').'.timeout', 60));
+        $lock = Cache::lock('slidebook-generation:'.$material->id, $timeout + 120);
+        if (! $lock->get()) {
+            throw ValidationException::withMessages(['slidebook' => 'Generation masih berjalan. Silakan tunggu.']);
+        }
+        try {
+            $material->refresh();
+            if (! $material->section?->course || $material->section->course->status === 'archived'
+                || $material->status === 'processing') {
+                throw ValidationException::withMessages(['slidebook' => 'Materi atau kursus tidak tersedia untuk generation.']);
+            }
+            $latest = $material->slidebooks()->latest('version')->first();
+            if (! $forceRegenerate && $latest) {
+                return $latest;
+            }
+
+            return $this->generate($material, $creator, $forceRegenerate);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function generate(LearningMaterial $material, User $creator, bool $forceRegenerate): Slidebook
     {
         // Find extracted documents for this material
         $documents = $material->documents()->with('extraction')->get();
@@ -109,12 +136,31 @@ PROMPT;
             sourceModel: $material,
             systemPrompt: $systemPrompt,
             userContent: $sourceContent,
-            schemaDefinition: $schemaDefinition
+            schemaDefinition: $schemaDefinition,
+            forceRegenerate: $forceRegenerate
         );
 
         $parsed = $aiOutput['parsed_data'];
+        $validator = Validator::make($parsed, [
+            'title' => ['required', 'string', 'max:255'],
+            'slides' => ['required', 'array', 'min:1'],
+            'slides.*.title' => ['required', 'string', 'max:255'],
+            'slides.*.content' => ['required', 'string'],
+        ]);
+        if ($validator->fails()) {
+            $aiOutput['log']->update(['status' => 'failed', 'error_message' => 'Output Slidebook AI tidak valid.']);
+            throw ValidationException::withMessages(['slidebook' => 'Output Slidebook AI tidak valid. Silakan coba kembali.']);
+        }
 
         return DB::transaction(function () use ($material, $creator, $parsed): Slidebook {
+            LearningMaterial::whereKey($material->id)->lockForUpdate()->firstOrFail();
+
+            // Archive any existing draft/review revisions to prevent orphaned duplicates.
+            // The published version is intentionally left untouched.
+            $material->slidebooks()
+                ->whereIn('status', [Slidebook::STATUS_DRAFT, Slidebook::STATUS_REVIEW])
+                ->update(['status' => Slidebook::STATUS_ARCHIVED]);
+
             // Determine version
             $latestSlidebook = Slidebook::where('material_id', $material->id)->latest('version')->first();
             $nextVersion = $latestSlidebook ? ($latestSlidebook->version + 1) : 1;

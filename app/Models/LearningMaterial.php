@@ -104,11 +104,20 @@ class LearningMaterial extends Model
         return $this->hasOne(Slidebook::class, 'material_id')->latestOfMany();
     }
 
+    /** @return HasOne<Slidebook, $this> */
+    public function publishedSlidebook(): HasOne
+    {
+        return $this->hasOne(Slidebook::class, 'material_id')->ofMany(
+            ['version' => 'max', 'id' => 'max'],
+            fn (Builder $query) => $query->where('status', Slidebook::STATUS_PUBLISHED)
+        );
+    }
+
     /**
      * @param  Builder<$this>  $query
      */
     public function scopePublished(Builder $query): void
     {
-        $query->where('status', self::STATUS_PUBLISHED);
+        $query->where('learning_materials.status', self::STATUS_PUBLISHED)->whereHas('section', fn ($section) => $section->where('status', 'active'));
     }
 }

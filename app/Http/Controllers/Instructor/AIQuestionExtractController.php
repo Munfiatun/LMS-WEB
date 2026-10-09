@@ -27,7 +27,7 @@ class AIQuestionExtractController extends Controller
         Gate::authorize('update', $questionBank);
 
         $request->validate([
-            'document' => ['required', 'file', 'mimes:pdf,docx,doc', 'max:10240'], // 10MB max
+            'document' => ['required', 'file', 'mimes:pdf,docx', 'extensions:pdf,docx', 'max:10240'], // 10MB max
         ]);
 
         $file = $request->file('document');
