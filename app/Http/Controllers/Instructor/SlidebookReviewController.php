@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Instructor;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateSlidebookDesignRequest;
 use App\Models\LearningMaterial;
 use App\Models\Slidebook;
 use App\Services\SlidebookService;
-use App\Http\Requests\UpdateSlidebookDesignRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -26,15 +26,26 @@ class SlidebookReviewController extends Controller
         $material->load([
             'section.course',
             'documents.extraction',
-            'slidebooks' => fn ($q) => $q->with('slides')->latest('version'),
         ]);
 
-        $slidebook = $material->slidebooks()->with('material')->first();
+        $slidebook = $material->slidebooks()
+            ->whereIn('status', [Slidebook::STATUS_DRAFT, Slidebook::STATUS_REVIEW])
+            ->with(['slides', 'material'])
+            ->latest('version')
+            ->first();
+
+        if (! $slidebook) {
+            $slidebook = $material->slidebooks()
+                ->where('status', Slidebook::STATUS_PUBLISHED)
+                ->with(['slides', 'material'])
+                ->latest('version')
+                ->first();
+        }
 
         if (! $slidebook) {
             return redirect()
                 ->route('instructor.materials.edit', $material)
-                ->with('error', 'Materi ini belum memiliki draft Slidebook. Silakan generate terlebih dahulu.');
+                ->with('error', 'Materi ini belum memiliki Slidebook. Silakan generate terlebih dahulu.');
         }
 
         return view('instructor.slidebooks.review', [
@@ -73,7 +84,6 @@ class SlidebookReviewController extends Controller
     public function approve(Request $request, Slidebook $slidebook): RedirectResponse
     {
         Gate::authorize('approve', $slidebook);
-
         $this->service->approve($slidebook, $request->user());
 
         return back()->with('success', 'Slidebook berhasil disetujui (Approved) dan tersimpan sebagai draft siap rilis.');
@@ -85,7 +95,6 @@ class SlidebookReviewController extends Controller
     public function publish(Request $request, Slidebook $slidebook): RedirectResponse
     {
         Gate::authorize('publish', $slidebook);
-
         $this->service->publish($slidebook);
 
         return back()->with('success', 'Slidebook resmi dipublikasikan! Siswa yang terdaftar kini dapat membaca materi ini.');

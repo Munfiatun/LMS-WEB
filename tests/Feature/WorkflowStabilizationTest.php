@@ -96,7 +96,12 @@ class WorkflowStabilizationTest extends TestCase
         [$teacher, $course] = $this->lesson();
         $this->actingAs($teacher)->postJson(route('instructor.courses.publish', $course))->assertUnprocessable()->assertJsonValidationErrors('course');
         $this->assertSame('draft', $course->fresh()->status);
-        $this->get(route('instructor.courses.edit', $course))->assertDontSee('Publikasikan Kursus');
+        $this->get(route('instructor.courses.edit', $course))
+            ->assertOk()
+            ->assertSee('Publikasikan Kursus')
+            ->assertSee('Kesiapan Publikasi')
+            ->assertSee('Kursus harus memiliki minimal satu materi published yang valid sebelum dipublikasikan.')
+            ->assertSee('disabled', false);
     }
 
     public function test_published_material_requires_explicit_unpublish_before_editing(): void
