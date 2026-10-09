@@ -25,24 +25,9 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => ['required', 'in:student,instructor,admin'],
-            'admin_code' => ['nullable', 'string'],
         ]);
 
-        if ($request->role === 'admin') {
-            // Secret code to register as Admin
-            if ($request->admin_code !== 'superadmin123') {
-                return back()->withInput()->withErrors(['admin_code' => 'Kode rahasia Admin tidak valid.']);
-            }
-        }
-
-        $roleName = match ($request->role) {
-            'admin' => Role::ROLE_ADMIN,
-            'instructor' => Role::ROLE_INSTRUCTOR,
-            default => Role::ROLE_STUDENT,
-        };
-
-        $roleModel = Role::where('name', $roleName)->firstOrFail();
+        $roleModel = Role::where('name', Role::ROLE_STUDENT)->firstOrFail();
 
         $user = User::create([
             'role_id' => $roleModel->id,
@@ -53,12 +38,7 @@ class RegisterController extends Controller
         ]);
 
         Auth::login($user);
-
-        if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard')->with('success', 'Selamat datang! Akun Admin Anda telah berhasil dibuat.');
-        } elseif ($user->isInstructor()) {
-            return redirect()->route('instructor.dashboard')->with('success', 'Selamat datang! Akun Instruktur Anda telah berhasil dibuat.');
-        }
+        $request->session()->regenerate();
 
         return redirect()->route('student.dashboard')->with('success', 'Selamat datang! Akun Anda telah berhasil dibuat.');
     }

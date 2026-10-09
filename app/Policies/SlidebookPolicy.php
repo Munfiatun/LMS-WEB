@@ -13,16 +13,29 @@ class SlidebookPolicy
      */
     public function view(?User $user, Slidebook $slidebook): bool
     {
-        // If published and the course is published, any authenticated user can view
-        if ($slidebook->isPublished() && $slidebook->material->section->course->isPublished()) {
-            return $user !== null;
-        }
-
-        if (! $user) {
+        if (! $user || ! $user->is_active) {
             return false;
         }
 
-        return $user->isAdmin() || $user->id === $slidebook->material->section->course->instructor_id;
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        $material = $slidebook->material;
+        $course = $material?->section?->course;
+        if (! $course) {
+            return false;
+        }
+
+        if ($user->isInstructor()) {
+            return $user->id === $course->instructor_id;
+        }
+
+        return $user->isStudent()
+            && $slidebook->isPublished()
+            && $material->status === LearningMaterial::STATUS_PUBLISHED
+            && $course->isPublished()
+            && $course->enrollments()->where('student_id', $user->id)->where('status', 'active')->exists();
     }
 
     /**
@@ -30,7 +43,7 @@ class SlidebookPolicy
      */
     public function generate(User $user, LearningMaterial $material): bool
     {
-        return $user->isAdmin() || $user->id === $material->section->course->instructor_id;
+        return $user->isAdmin() || ($user->isInstructor() && $user->id === $material->section?->course?->instructor_id);
     }
 
     /**
@@ -38,7 +51,7 @@ class SlidebookPolicy
      */
     public function update(User $user, Slidebook $slidebook): bool
     {
-        return $user->isAdmin() || $user->id === $slidebook->material->section->course->instructor_id;
+        return $user->isAdmin() || ($user->isInstructor() && $user->id === $slidebook->material?->section?->course?->instructor_id);
     }
 
     /**
@@ -46,7 +59,7 @@ class SlidebookPolicy
      */
     public function approve(User $user, Slidebook $slidebook): bool
     {
-        return $user->isAdmin() || $user->id === $slidebook->material->section->course->instructor_id;
+        return $user->isAdmin() || ($user->isInstructor() && $user->id === $slidebook->material?->section?->course?->instructor_id);
     }
 
     /**
@@ -54,7 +67,7 @@ class SlidebookPolicy
      */
     public function publish(User $user, Slidebook $slidebook): bool
     {
-        return $user->isAdmin() || $user->id === $slidebook->material->section->course->instructor_id;
+        return $user->isAdmin() || ($user->isInstructor() && $user->id === $slidebook->material?->section?->course?->instructor_id);
     }
 
     /**
@@ -62,6 +75,6 @@ class SlidebookPolicy
      */
     public function delete(User $user, Slidebook $slidebook): bool
     {
-        return $user->isAdmin() || $user->id === $slidebook->material->section->course->instructor_id;
+        return $user->isAdmin() || ($user->isInstructor() && $user->id === $slidebook->material?->section?->course?->instructor_id);
     }
 }

@@ -13,14 +13,28 @@ class MaterialDocumentPolicy
      */
     public function view(User $user, MaterialDocument $materialDocument): bool
     {
-        $course = $materialDocument->material->section->course;
+        if (! $user->is_active) {
+            return false;
+        }
 
-        if ($user->isAdmin() || $user->id === $course->instructor_id) {
+        if ($user->isAdmin()) {
             return true;
         }
 
-        // Student can view if course & material are published
-        return $course->isPublished() && $materialDocument->material->status === LearningMaterial::STATUS_PUBLISHED;
+        $material = $materialDocument->material;
+        $course = $material?->section?->course;
+        if (! $course) {
+            return false;
+        }
+
+        if ($user->isInstructor()) {
+            return $user->id === $course->instructor_id;
+        }
+
+        return $user->isStudent()
+            && $course->isPublished()
+            && $material->status === LearningMaterial::STATUS_PUBLISHED
+            && $course->enrollments()->where('student_id', $user->id)->where('status', 'active')->exists();
     }
 
     /**

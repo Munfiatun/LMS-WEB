@@ -46,7 +46,7 @@ class OpenAIProvider implements AIProviderInterface
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException("OpenAI API error: HTTP {$response->status()} - {$response->body()}");
+            throw new RuntimeException("OpenAI API error: HTTP {$response->status()}");
         }
 
         $responseData = $response->json();

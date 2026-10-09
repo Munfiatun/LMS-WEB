@@ -9,6 +9,7 @@ use App\Services\AI\AISlidebookService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class AIProcessController extends Controller
@@ -35,7 +36,9 @@ class AIProcessController extends Controller
                 ->route('instructor.materials.slidebook.review', $material)
                 ->with('success', 'Slidebook berhasil dibuat oleh AI dan siap untuk ditinjau!');
         } catch (Throwable $e) {
-            return back()->with('error', 'Gagal memproses materi dengan AI: '.$e->getMessage());
+            Log::error('AI slidebook processing failed', ['exception_type' => $e::class, 'material_id' => $material->id]);
+
+            return back()->with('error', 'Proses AI gagal. Silakan coba kembali.');
         }
     }
 }

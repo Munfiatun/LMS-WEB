@@ -12,7 +12,7 @@ class QuizResultController extends Controller
     {
         Gate::authorize('view', $quiz);
 
-        $attempts = $quiz->attempts()->with('student')->latest('submitted_at')->paginate(15);
+        $attempts = $quiz->attempts()->with(['student', 'quiz'])->latest('submitted_at')->paginate(15);
 
         return view('instructor.quizzes.results', compact('quiz', 'attempts'));
     }

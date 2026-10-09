@@ -249,6 +249,9 @@ class SlidebookPipelineTest extends TestCase
 
     public function test_student_can_view_published_slidebook(): void
     {
+        $this->material->update(['status' => 'published']);
+        $this->course->enrollments()->create(['student_id' => $this->student->id, 'status' => 'active']);
+
         $slidebook = Slidebook::create([
             'material_id' => $this->material->id,
             'title' => 'Published Slidebook',
@@ -276,6 +279,9 @@ class SlidebookPipelineTest extends TestCase
 
     public function test_student_and_teacher_preview_share_all_presentation_patterns_without_changing_source(): void
     {
+        $this->material->update(['status' => 'published']);
+        $this->course->enrollments()->create(['student_id' => $this->student->id, 'status' => 'active']);
+
         $book = Slidebook::create([
             'material_id' => $this->material->id,
             'title' => 'Presentasi lintas format',

@@ -26,7 +26,11 @@ class QuizAttemptService
             ->first();
 
         if ($activeAttempt) {
-            return $activeAttempt;
+            if (! $activeAttempt->expires_at || now()->lt($activeAttempt->expires_at)) {
+                return $activeAttempt;
+            }
+
+            $this->submitAttempt($activeAttempt, []);
         }
 
         $attemptsCount = QuizAttempt::where('quiz_id', $quiz->id)
@@ -103,14 +107,14 @@ class QuizAttemptService
             $now = now();
 
             // Check Server-Authoritative Timer
-            if ($attempt->expires_at && $now->isAfter($attempt->expires_at)) {
+            if ($attempt->expires_at && $now->greaterThanOrEqualTo($attempt->expires_at)) {
                 $attempt->status = 'expired';
             } else {
                 $attempt->status = 'submitted';
             }
 
             $attempt->submitted_at = $now;
-            $attempt->duration_seconds = $now->diffInSeconds($attempt->started_at);
+            $attempt->duration_seconds = (int) $attempt->started_at->diffInSeconds($now);
 
             $score = 0;
             $correctCount = 0;
@@ -119,6 +123,13 @@ class QuizAttemptService
             $maxPossibleScore = 0;
 
             $attemptQuestions = $attempt->attemptQuestions()->with('question.options')->get();
+
+            foreach ($answers as $questionId => $selectedOptionId) {
+                $attemptQuestion = $attemptQuestions->firstWhere('question_id', $questionId);
+                if (! $attemptQuestion || ($selectedOptionId !== null && ! $attemptQuestion->question->options->contains('id', $selectedOptionId))) {
+                    throw ValidationException::withMessages(['answers' => 'Pilihan jawaban tidak sesuai dengan soal pada ujian ini.']);
+                }
+            }
 
             foreach ($attemptQuestions as $attemptQuestion) {
                 $question = $attemptQuestion->question;

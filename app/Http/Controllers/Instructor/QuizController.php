@@ -37,7 +37,7 @@ class QuizController extends Controller
 
         $validated = $request->validate([
             'course_id' => ['required', 'exists:courses,id'],
-            'section_id' => ['nullable', 'exists:course_sections,id'],
+            'section_id' => ['nullable', 'integer'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'instructions' => ['nullable', 'string'],

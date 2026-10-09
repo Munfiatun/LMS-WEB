@@ -63,7 +63,6 @@ class AIQuizController extends Controller
                 'model' => config('ai.providers.'.config('ai.provider').'.model'),
                 'slidebook_id' => $slidebook->id,
                 'exception' => get_class($exception),
-                'message' => $exception->getMessage(),
             ]);
 
             return back()->withInput()->with('error', 'Gagal membuat quiz dengan AI. Silakan coba lagi.');

@@ -60,11 +60,11 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center gap-2">
-                                        <div class="text-lg font-bold {{ $attempt->percentage >= $quiz->passing_score ? 'text-green-600' : 'text-red-600' }}">
+                                        <div class="text-lg font-bold {{ $attempt->isPassed() ? 'text-green-600' : 'text-red-600' }}">
                                             {{ round($attempt->percentage, 2) }}%
                                         </div>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $attempt->percentage >= $quiz->passing_score ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                            {{ $attempt->percentage >= $quiz->passing_score ? 'LULUS' : 'GAGAL' }}
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $attempt->isPassed() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                            {{ $attempt->isPassed() ? 'LULUS' : 'GAGAL' }}
                                         </span>
                                     </div>
                                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">

@@ -13,7 +13,7 @@
             <div class="p-8">
                 <!-- Status Kelulusan -->
                 <div class="text-center mb-10">
-                    @if($attempt->percentage >= $quiz->passing_score)
+                    @if($attempt->isPassed())
                         <div class="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-green-100 mb-4">
                             <svg class="h-12 w-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                         </div>
@@ -24,7 +24,7 @@
                             <svg class="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </div>
                         <h3 class="text-3xl font-bold text-gray-900 dark:text-white">ANDA BELUM LULUS</h3>
-                        <p class="mt-2 text-lg text-gray-600 dark:text-gray-400">Nilai Anda masih di bawah standar kelulusan ({{ $quiz->passing_score }}%).</p>
+                        <p class="mt-2 text-lg text-gray-600 dark:text-gray-400">{{ $attempt->status === 'expired' ? 'Waktu ujian telah habis. Attempt ini tidak dihitung sebagai kelulusan.' : 'Nilai Anda masih di bawah standar kelulusan ('.$quiz->passing_score.'%).' }}</p>
                     @endif
                 </div>
 
@@ -32,7 +32,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700 mb-8">
                     <div class="text-center p-4">
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Persentase Nilai</p>
-                        <p class="text-4xl font-black {{ $attempt->percentage >= $quiz->passing_score ? 'text-green-600' : 'text-red-600' }}">
+                        <p class="text-4xl font-black {{ $attempt->isPassed() ? 'text-green-600' : 'text-red-600' }}">
                             {{ round($attempt->percentage, 2) }}%
                         </p>
                     </div>
@@ -72,7 +72,7 @@
                         Kembali ke Dashboard
                     </a>
                     
-                    @if($attempt->percentage < $quiz->passing_score && $quiz->attempts()->where('student_id', auth()->id())->count() < $quiz->max_attempts)
+                    @if(! $attempt->isPassed() && $quiz->attempts()->where('student_id', auth()->id())->count() < $quiz->max_attempts)
                         <a href="{{ route('student.quizzes.show', $quiz) }}" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
                             Coba Lagi Kuis Ini
                         </a>

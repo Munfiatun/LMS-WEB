@@ -72,6 +72,7 @@ class EnrollmentService
 
         // Completed materials
         $completedMaterials = MaterialProgress::where('student_id', $student->id)
+            ->whereHas('learningMaterial', fn ($query) => $query->where('status', 'published'))
             ->whereHas('learningMaterial.section', function ($q) use ($course) {
                 $q->where('course_id', $course->id);
             })
@@ -79,9 +80,10 @@ class EnrollmentService
             ->count();
 
         // Completed quizzes (passed)
-        $completedQuizzes = $course->quizzes()->whereHas('attempts', function ($q) use ($student) {
+        $completedQuizzes = $course->quizzes()->where('status', 'published')->whereHas('attempts', function ($q) use ($student) {
             $q->where('student_id', $student->id)
-                ->whereColumn('percentage', '>=', 'passing_score');
+                ->where('status', 'submitted')
+                ->whereColumn('percentage', '>=', 'quizzes.passing_score');
         })->count();
 
         $completedItems = $completedMaterials + $completedQuizzes;
@@ -93,6 +95,9 @@ class EnrollmentService
         if ($enrollment->progress_percentage >= 100) {
             $enrollment->status = 'completed';
             $enrollment->completed_at = $enrollment->completed_at ?? now();
+        } elseif ($enrollment->status === 'completed') {
+            $enrollment->status = 'active';
+            $enrollment->completed_at = null;
         }
 
         $enrollment->save();

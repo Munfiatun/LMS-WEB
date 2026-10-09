@@ -10,7 +10,10 @@ use App\Services\AI\Providers\GroqProvider;
 use App\Services\AI\Providers\MockAIProvider;
 use App\Services\AI\Providers\OpenAIProvider;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
+use RuntimeException;
 use Throwable;
 
 class AIContentService
@@ -109,11 +112,17 @@ class AIContentService
             $log->update([
                 'status' => AIProcessingLog::STATUS_FAILED,
                 'error_code' => (string) $e->getCode(),
-                'error_message' => $e->getMessage(),
+                'error_message' => 'Proses AI gagal. Silakan coba kembali.',
                 'processing_completed_at' => now(),
             ]);
 
-            throw $e;
+            Log::error('AI provider processing failed', ['exception_type' => $e::class, 'processing_log_id' => $log->id]);
+
+            if ($e instanceof ConnectionException) {
+                throw new ConnectionException('Proses AI gagal. Silakan coba kembali.');
+            }
+
+            throw new RuntimeException('Proses AI gagal. Silakan coba kembali.');
         }
     }
 }

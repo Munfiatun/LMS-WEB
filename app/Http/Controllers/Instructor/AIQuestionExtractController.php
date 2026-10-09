@@ -10,6 +10,7 @@ use App\Services\Document\DocumentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class AIQuestionExtractController extends Controller
@@ -59,8 +60,10 @@ class AIQuestionExtractController extends Controller
             return redirect()
                 ->route('instructor.question-banks.review', $questionBank)
                 ->with('info', 'Proses ekstraksi soal dengan AI sedang berjalan di latar belakang. Halaman ini akan memuat ulang secara otomatis, atau Anda dapat me-refresh secara manual.');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengekstrak teks dari dokumen: '.$e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('AI question extraction failed', ['exception_type' => $e::class, 'document_id' => $document->id]);
+
+            return back()->with('error', 'Proses AI gagal. Silakan coba kembali.');
         }
     }
 

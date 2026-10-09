@@ -56,20 +56,12 @@ class GroqProvider implements AIProviderInterface
             ->post("{$this->baseUrl}/chat/completions", $payload);
 
         if (! $response->successful()) {
-            $error = (array) $response->json('error', []);
-            $code = (string) ($error['code'] ?? 'unknown');
-            $message = (string) ($error['message'] ?? 'Unknown error');
             Log::warning('Groq API request failed', [
                 'provider' => 'groq',
-                'model' => $this->model,
                 'status' => $response->status(),
-                'code' => $code,
-                'message' => $message,
-                'failed_generation' => mb_substr((string) ($error['failed_generation'] ?? ''), 0, 300),
-                'max_completion_tokens' => $payload['max_completion_tokens'],
             ]);
 
-            throw new RuntimeException("Groq API error: HTTP {$response->status()} [{$code}] {$message}");
+            throw new RuntimeException("Groq API error: HTTP {$response->status()}");
         }
 
         $responseData = $response->json();

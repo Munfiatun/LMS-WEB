@@ -48,9 +48,12 @@
                                 $statusClass = 'bg-slate-500/10 text-slate-400 border-slate-500/20';
                                 
                                 if ($latestAttempt) {
-                                    if ($latestAttempt->is_completed) {
+                                    if ($latestAttempt->status === 'submitted') {
                                         $status = 'Selesai';
                                         $statusClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                                    } elseif ($latestAttempt->status === 'expired') {
+                                        $status = 'Waktu Habis';
+                                        $statusClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
                                     } else {
                                         $status = 'Sedang Dikerjakan';
                                         $statusClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
@@ -71,14 +74,14 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    @if($latestAttempt && $latestAttempt->is_completed)
+                                    @if($latestAttempt && $latestAttempt->status === 'submitted')
                                         <span class="text-lg font-bold text-white">{{ number_format($latestAttempt->score, 0) }}</span>
                                     @else
                                         <span class="text-slate-500">-</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    @if(!$latestAttempt || !$latestAttempt->is_completed)
+                                    @if(!$latestAttempt || $latestAttempt->status === 'in_progress')
                                         <a href="{{ route('student.quizzes.show', $quiz) }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition-colors shadow shadow-indigo-600/20">
                                             Kerjakan
                                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>

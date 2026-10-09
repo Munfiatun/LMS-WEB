@@ -30,11 +30,11 @@ class GeminiProvider implements AIProviderInterface
             throw new RuntimeException('Gemini API key is missing. Set GEMINI_API_KEY in .env or switch AI_PROVIDER to mock.');
         }
 
-        $url = "{$this->baseUrl}/models/{$this->model}:generateContent?key={$this->apiKey}";
+        $url = "{$this->baseUrl}/models/{$this->model}:generateContent";
 
         $combinedPrompt = $systemPrompt."\n\n=== SOURCE DOCUMENT CONTENT ===\n".$userContent;
 
-        $response = Http::timeout($this->timeout)->post($url, [
+        $response = Http::withHeaders(['x-goog-api-key' => $this->apiKey])->timeout($this->timeout)->post($url, [
             'contents' => [
                 [
                     'parts' => [
@@ -49,7 +49,7 @@ class GeminiProvider implements AIProviderInterface
         ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException("Gemini API error: HTTP {$response->status()} - {$response->body()}");
+            throw new RuntimeException("Gemini API error: HTTP {$response->status()}");
         }
 
         $responseData = $response->json();

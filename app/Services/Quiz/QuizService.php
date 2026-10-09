@@ -6,6 +6,8 @@ use App\Models\Course;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class QuizService
@@ -15,6 +17,9 @@ class QuizService
      */
     public function createQuiz(Course $course, array $data): Quiz
     {
+        $data['course_id'] = $course->id;
+        $this->validateSection($data);
+
         return $course->quizzes()->create($data);
     }
 
@@ -23,9 +28,19 @@ class QuizService
      */
     public function updateQuiz(Quiz $quiz, array $data): Quiz
     {
+        $this->validateSection(array_merge($quiz->only(['course_id', 'section_id']), $data));
         $quiz->update($data);
 
         return $quiz;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function validateSection(array $data): void
+    {
+        Validator::make($data, [
+            'course_id' => ['required', 'integer', 'exists:courses,id'],
+            'section_id' => ['nullable', 'integer', Rule::exists('course_sections', 'id')->where('course_id', $data['course_id'])],
+        ])->validate();
     }
 
     /**

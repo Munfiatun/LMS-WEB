@@ -41,11 +41,11 @@ class DocxDocumentParser implements DocumentParserInterface
 
         $dom = new DOMDocument;
         $prevEntityLoader = libxml_use_internal_errors(true);
-        $loaded = $dom->loadXML($xmlContent, LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
+        $loaded = $dom->loadXML($xmlContent, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
         libxml_clear_errors();
         libxml_use_internal_errors($prevEntityLoader);
 
-        if (! $loaded) {
+        if (! $loaded || $dom->doctype !== null) {
             throw new RuntimeException('Failed to parse XML content of DOCX document');
         }
 

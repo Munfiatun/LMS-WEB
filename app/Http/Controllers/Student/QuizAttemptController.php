@@ -9,6 +9,7 @@ use App\Services\EnrollmentService;
 use App\Services\Quiz\QuizAttemptService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class QuizAttemptController extends Controller
 {
@@ -44,8 +45,10 @@ class QuizAttemptController extends Controller
             $attempt = $this->quizAttemptService->startAttempt($quiz, auth()->user());
 
             return redirect()->route('student.quizzes.take', ['quiz' => $quiz->id, 'attempt' => $attempt->id]);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', 'Proses ujian gagal. Silakan coba kembali.');
         }
     }
 
@@ -54,6 +57,10 @@ class QuizAttemptController extends Controller
         Gate::authorize('view', $quiz);
         abort_unless($attempt->quiz_id === $quiz->id, 404);
         Gate::authorize('update', $attempt);
+
+        if ($attempt->status === 'in_progress' && $attempt->expires_at && now()->greaterThanOrEqualTo($attempt->expires_at)) {
+            $this->quizAttemptService->submitAttempt($attempt, []);
+        }
 
         if ($attempt->status !== 'in_progress') {
             return redirect()->route('student.quizzes.result', ['quiz' => $quiz->id, 'attempt' => $attempt->id])
@@ -73,7 +80,7 @@ class QuizAttemptController extends Controller
 
         $validated = $request->validate([
             'answers' => ['array'],
-            'answers.*' => ['nullable', 'exists:question_options,id'],
+            'answers.*' => ['nullable', 'integer', 'exists:question_options,id'],
         ]);
 
         try {
@@ -84,8 +91,10 @@ class QuizAttemptController extends Controller
 
             return redirect()->route('student.quizzes.result', ['quiz' => $quiz->id, 'attempt' => $attempt->id])
                 ->with('success', 'Ujian berhasil dikumpulkan.');
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', 'Proses ujian gagal. Silakan coba kembali.');
         }
     }
 

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Course;
+use App\Models\CourseEnrollment;
 use App\Models\CourseSection;
 use App\Models\LearningMaterial;
 use App\Models\Question;
@@ -193,7 +194,7 @@ class AIQuizGenerationTest extends TestCase
         $quiz = Quiz::sole();
         $question = $quiz->questions()->firstOrFail();
         $student = $this->user('student');
-        \App\Models\CourseEnrollment::create(['course_id' => $quiz->course_id, 'student_id' => $student->id, 'status' => 'active', 'progress_percentage' => 0]);
+        CourseEnrollment::create(['course_id' => $quiz->course_id, 'student_id' => $student->id, 'status' => 'active', 'progress_percentage' => 0]);
         $this->actingAs($student)->get(route('student.quizzes.show', $quiz))->assertForbidden();
         $this->post(route('student.quizzes.start', $quiz))->assertForbidden();
         $this->actingAs($teacher)->post(route('instructor.quizzes.publish', $quiz))->assertSessionHasErrors('quiz');
@@ -247,7 +248,7 @@ class AIQuizGenerationTest extends TestCase
             $question['correct_option'] = 0;
         }
         unset($question);
-        Http::fake(['https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=test-key' => Http::response(['candidates' => [['content' => ['parts' => [['text' => json_encode($output)]]]]]])]);
+        Http::fake(['https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent' => Http::response(['candidates' => [['content' => ['parts' => [['text' => json_encode($output)]]]]]])]);
         $this->actingAs($teacher)->post(route('instructor.quizzes.generate-ai'), [...$this->payload($slidebook), 'type' => 'true_false', 'difficulty' => 'mixed'])->assertSessionHas('success');
         $this->assertSame('true_false', Question::firstOrFail()->type);
         $this->assertSame(2, Question::firstOrFail()->options()->count());
@@ -292,7 +293,7 @@ class AIQuizGenerationTest extends TestCase
     {
         [$teacher, $slidebook] = $this->source();
         $student = $this->user('student');
-        \App\Models\CourseEnrollment::create(['course_id' => $slidebook->material->section->course_id, 'student_id' => $student->id, 'status' => 'active', 'progress_percentage' => 0]);
+        CourseEnrollment::create(['course_id' => $slidebook->material->section->course_id, 'student_id' => $student->id, 'status' => 'active', 'progress_percentage' => 0]);
         $quiz = Quiz::factory()->create(['course_id' => $slidebook->material->section->course_id, 'status' => 'draft']);
         $otherQuiz = Quiz::factory()->create(['course_id' => $quiz->course_id, 'status' => 'published']);
         $attempt = $quiz->attempts()->create(['student_id' => $student->id, 'status' => 'in_progress', 'started_at' => now(), 'expires_at' => now()->addHour()]);
@@ -346,7 +347,7 @@ class AIQuizGenerationTest extends TestCase
         ], $items);
         $endpoint = match ($provider) {
             'groq' => 'https://api.groq.com/openai/v1/chat/completions',
-            'gemini' => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=test-key',
+            'gemini' => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
             default => 'https://api.openai.com/v1/chat/completions',
         };
         $response = $provider === 'gemini'

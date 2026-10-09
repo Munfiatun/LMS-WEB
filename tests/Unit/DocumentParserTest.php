@@ -60,6 +60,53 @@ class DocumentParserTest extends TestCase
         $this->assertCount(1, $result['metadata']['headings']);
     }
 
+    public function test_docx_parser_rejects_external_entities_without_loading_them(): void
+    {
+        $docxPath = $this->tempDir.'/external.docx';
+        $secretPath = $this->tempDir.'/private.txt';
+        file_put_contents($secretPath, 'private sentinel');
+        $xml = '<?xml version="1.0"?><!DOCTYPE document [<!ENTITY secret SYSTEM "file://'.$secretPath.'">]>'
+            .'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            .'<w:body><w:p><w:t>&secret;</w:t></w:p></w:body></w:document>';
+        $zip = new ZipArchive;
+        $zip->open($docxPath, ZipArchive::CREATE);
+        $zip->addFromString('word/document.xml', $xml);
+        $zip->close();
+        $externalLoads = 0;
+        libxml_set_external_entity_loader(function () use (&$externalLoads) {
+            $externalLoads++;
+
+            return null;
+        });
+
+        try {
+            (new DocxDocumentParser)->parse($docxPath);
+            $this->fail('A DOCX with a DTD must be rejected.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Failed to parse XML content of DOCX document', $exception->getMessage());
+            $this->assertSame(0, $externalLoads);
+        } finally {
+            libxml_set_external_entity_loader(null);
+        }
+    }
+
+    public function test_docx_parser_does_not_resolve_xinclude(): void
+    {
+        $docxPath = $this->tempDir.'/include.docx';
+        $secretPath = $this->tempDir.'/private.txt';
+        file_put_contents($secretPath, 'private sentinel');
+        $zip = new ZipArchive;
+        $zip->open($docxPath, ZipArchive::CREATE);
+        $zip->addFromString('word/document.xml', '<?xml version="1.0"?>'
+            .'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:xi="http://www.w3.org/2001/XInclude">'
+            .'<w:body><w:p><w:t>Normal text</w:t><xi:include href="file://'.$secretPath.'" parse="text"/></w:p></w:body></w:document>');
+        $zip->close();
+
+        $result = (new DocxDocumentParser)->parse($docxPath);
+
+        $this->assertSame('Normal text', $result['content']);
+    }
+
     public function test_docx_parser_throws_exception_on_corrupt_file(): void
     {
         $corruptPath = $this->tempDir.'/corrupt.docx';

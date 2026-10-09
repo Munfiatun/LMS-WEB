@@ -34,6 +34,12 @@ class QuizAttempt extends Model
         'percentage' => 'float',
     ];
 
+    public function isPassed(): bool
+    {
+        return $this->status === 'submitted' && $this->percentage !== null
+            && $this->percentage >= $this->quiz->passing_score;
+    }
+
     public function quiz(): BelongsTo
     {
         return $this->belongsTo(Quiz::class);

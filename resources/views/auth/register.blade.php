@@ -57,23 +57,6 @@
                        placeholder="Ulangi password">
             </div>
 
-            <div x-data="{ role: '{{ old('role', 'student') }}' }">
-                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Pilih Peran Akun</label>
-                <select name="role" x-model="role" class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm mb-4">
-                    <option value="student">Siswa (Student)</option>
-                    <option value="instructor">Guru (Instructor)</option>
-                    <option value="admin">Administrator</option>
-                </select>
-
-                <div x-show="role === 'admin'" x-collapse class="mb-4">
-                    <label for="admin_code" class="block text-xs font-semibold text-rose-300 uppercase tracking-wider mb-1.5">Kode Akses Admin</label>
-                    <input id="admin_code" name="admin_code" type="password" value="{{ old('admin_code') }}"
-                           class="w-full px-4 py-2.5 bg-slate-950 border border-rose-500/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm transition-all"
-                           placeholder="Masukkan kode rahasia...">
-                    <p class="text-[10px] text-slate-500 mt-1">Hanya pengguna dengan kode yang benar yang dapat menjadi admin.</p>
-                </div>
-            </div>
-
             <div class="pt-2">
                 <button type="submit"
                         class="w-full py-3 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-lg shadow-indigo-600/25 transition-all hover:scale-[1.01] active:scale-[0.99]">
