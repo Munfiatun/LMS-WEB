@@ -11,6 +11,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
+use Illuminate\Validation\Rule;
+
 class SlideController extends Controller
 {
     public function __construct(private SlidebookService $service) {}
@@ -27,7 +29,7 @@ class SlideController extends Controller
             'subtitle' => ['nullable', 'string', 'max:255'],
             'content' => ['required', 'string'],
             'summary' => ['nullable', 'string'],
-            'layout' => ['nullable', 'string', 'max:255'],
+            'layout' => ['nullable', 'string', Rule::in(\App\Services\SlideLayoutRegistry::getValidationKeys())],
         ]);
 
         $this->service->addSlide($slidebook, $validated);
@@ -47,7 +49,7 @@ class SlideController extends Controller
             'subtitle' => ['nullable', 'string', 'max:255'],
             'content' => ['required', 'string'],
             'summary' => ['nullable', 'string'],
-            'layout' => ['nullable', 'string', 'max:255'],
+            'layout' => ['nullable', 'string', Rule::in(\App\Services\SlideLayoutRegistry::getValidationKeys())],
             'needs_review' => ['nullable', 'boolean'],
         ]);
 

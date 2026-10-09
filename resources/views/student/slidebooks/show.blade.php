@@ -54,7 +54,7 @@
 
                 {{-- Slide Header --}}
                 <header class="slide-heading">
-                    <div class="flex flex-wrap items-center gap-3 mb-5">
+                    <div class="flex flex-wrap items-center gap-3 mb-5" @if(in_array($presentation['layout'], ['cover', 'section-divider', 'closing'])) style="display:none;" @endif>
                         <span class="slide-kicker">{{ $presentation['label'] }}</span>
                         <span class="text-xs text-slate-400">Slide {{ $loop->iteration }} dari {{ $totalSlides }}</span>
                     </div>
@@ -90,8 +90,8 @@
                             @endforeach
                         </div>
 
-                    @elseif($presentation['layout'] === 'process')
-                        {{-- PROCESS: Numbered steps with connectors --}}
+                    @elseif(in_array($presentation['layout'], ['process', 'timeline']))
+                        {{-- PROCESS / TIMELINE: Sequential layout --}}
                         <div class="slide-blocks">
                             @foreach($presentation['blocks'] as $block)
                                 <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 6) * 150 }}ms"
@@ -112,8 +112,8 @@
                             @endforeach
                         </div>
 
-                    @elseif($presentation['layout'] === 'summary')
-                        {{-- SUMMARY: Clean checklist --}}
+                    @elseif(in_array($presentation['layout'], ['summary', 'cover', 'section-divider', 'closing']))
+                        {{-- SUMMARY / COVER / SECTION-DIVIDER / CLOSING: Clean checklist or centered --}}
                         <div class="slide-blocks">
                             @foreach($presentation['blocks'] as $block)
                                 <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 6) * 80 }}ms">
@@ -123,7 +123,7 @@
                         </div>
 
                     @else
-                        {{-- DEFAULT: code, visual, example, checkpoint, reading, quote --}}
+                        {{-- DEFAULT: case-study, definition, image-focus, quote, code, diagram, checkpoint, example, reading --}}
                         <div class="slide-blocks">
                             @foreach($presentation['blocks'] as $block)
                                 <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 4) * 100 }}ms"
@@ -136,7 +136,7 @@
                 </div>
 
                 {{-- "Show more" button for long slides --}}
-                @if(count($presentation['blocks']) > 5 && !in_array($presentation['layout'], ['concept', 'summary']))
+                @if(count($presentation['blocks']) > 5 && !in_array($presentation['layout'], ['concept', 'summary', 'cover', 'section-divider', 'closing']))
                     <button class="presentation-button mt-5" type="button" @click="visibleBlocks += 5" x-show="visibleBlocks < {{ count($presentation['blocks']) }}">
                         Baca bagian berikutnya <span class="text-indigo-300" x-text="'(' + Math.min(visibleBlocks, {{ count($presentation['blocks']) }}) + '/{{ count($presentation['blocks']) }})'"></span>
                     </button>

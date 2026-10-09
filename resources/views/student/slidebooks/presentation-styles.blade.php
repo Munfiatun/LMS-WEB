@@ -46,7 +46,7 @@
     transition: background 0.2s, transform 0.15s;
 }
 .slide-presentation .presentation-button:hover {
-    background: #334155;
+    background: var(--slide-border);
 }
 .slide-presentation .presentation-button:active {
     transform: scale(0.97);
@@ -58,11 +58,11 @@
 }
 .slide-presentation .presentation-primary {
     background: var(--slide-indigo);
-    border-color: #6366f1;
+    border-color: var(--slide-primary);
     color: white;
 }
 .slide-presentation .presentation-primary:hover {
-    background: #4338ca;
+    background: var(--slide-primary);
 }
 
 /* --- Progress Bar --- */
@@ -89,14 +89,14 @@
     width: 8px;
     height: 8px;
     border-radius: 999px;
-    background: #334155;
+    background: var(--slide-border);
     border: none;
     cursor: pointer;
     padding: 0;
     transition: background 0.2s, transform 0.2s;
 }
 .slide-presentation .progress-dot:hover {
-    background: #818cf8aa;
+    background: var(--slide-accent-soft);
     transform: scale(1.3);
 }
 .slide-presentation .progress-dot.active {
@@ -141,7 +141,7 @@
     font-size: clamp(1rem, 1.5vw, 1.2rem);
     line-height: 1.7;
     margin-top: 1rem;
-    color: #cbd5e1;
+    color: var(--slide-text-muted);
     max-width: 70ch;
 }
 
@@ -154,8 +154,8 @@
     color: var(--slide-violet);
 }
 .slide-presentation .slide-heading .slide-kicker {
-    border: 1px solid #6366f155;
-    background: #312e8133;
+    border: 1px solid var(--slide-accent-soft);
+    background: var(--slide-surface-raised);
     padding: 0.4rem 0.75rem;
     border-radius: 999px;
 }
@@ -202,7 +202,7 @@
 .slide-presentation .point-label {
     font-size: 1.15rem;
     font-weight: 700;
-    color: #c7d2fe;
+    color: var(--slide-text-heading);
     margin-bottom: 0.7rem;
 }
 .slide-presentation .point-text,
@@ -215,12 +215,12 @@
 
 /* --- Keyword Signaling --- */
 .slide-presentation .signal-term {
-    background: #312e8166;
-    color: #c7d2fe;
+    background: var(--slide-surface-raised);
+    color: var(--slide-text-heading);
     padding: 0.1em 0.4em;
     border-radius: 0.3em;
     font-weight: 600;
-    border: 1px solid #6366f133;
+    border: 1px solid var(--slide-accent-soft);
 }
 
 /* --- Signal Terms Bar --- */
@@ -235,9 +235,9 @@
     font-weight: 600;
     padding: 0.3rem 0.65rem;
     border-radius: 999px;
-    background: #312e8144;
-    color: #a5b4fc;
-    border: 1px solid #6366f133;
+    background: var(--slide-surface-raised);
+    color: var(--slide-accent);
+    border: 1px solid var(--slide-accent-soft);
     letter-spacing: 0.03em;
 }
 
@@ -255,8 +255,8 @@
     display: grid;
     place-items: center;
     color: var(--slide-violet);
-    background: linear-gradient(135deg, #312e8155, #4c1d9533);
-    border: 1px solid #6366f155;
+    background: linear-gradient(135deg, var(--slide-surface-raised), var(--slide-surface-raised));
+    border: 1px solid var(--slide-accent-soft);
     aspect-ratio: 1;
     border-radius: 2rem;
     max-width: 200px;
@@ -267,7 +267,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at 30% 30%, #818cf822, transparent 60%);
+    background: radial-gradient(circle at 30% 30%, var(--slide-accent-soft), transparent 60%);
 }
 .slide-presentation .layout-concept .learning-point {
     background: none;
@@ -292,7 +292,7 @@
     border-image: linear-gradient(90deg, var(--slide-gradient-start), var(--slide-gradient-end)) 1;
 }
 .slide-presentation .layout-key-points .block-item:nth-child(even) .learning-point {
-    border-image: linear-gradient(90deg, var(--slide-gradient-end), #e879f9) 1;
+    border-image: linear-gradient(90deg, var(--slide-gradient-end), var(--slide-gradient-end)) 1;
 }
 /* 3-column for exactly 3 items on desktop */
 .slide-presentation .layout-key-points .slide-blocks:has(> .block-item:nth-child(3)):not(:has(> .block-item:nth-child(4))) {
@@ -319,7 +319,7 @@
 }
 .slide-presentation .layout-comparison .slide-block:nth-child(even) .learning-point {
     border-top-color: var(--slide-violet);
-    background: #17162f;
+    background: var(--slide-surface);
 }
 .slide-presentation .layout-comparison .slide-block:nth-child(odd) .learning-point::before {
     content: 'A';
@@ -350,7 +350,7 @@
     place-items: center;
     border-radius: 999px;
     background: var(--slide-violet);
-    color: #1e1b4b;
+    color: var(--slide-surface);
     opacity: 0.6;
 }
 
@@ -395,11 +395,11 @@
     font-size: 0.9rem;
     font-weight: 700;
     color: white;
-    box-shadow: 0 4px 12px -2px #4f46e566;
+    box-shadow: 0 4px 12px -2px var(--slide-accent-soft);
 }
 .slide-presentation .layout-process .learning-point {
     align-items: center;
-    border-color: #6366f155;
+    border-color: var(--slide-accent-soft);
     position: relative;
 }
 
@@ -427,10 +427,10 @@
 /* --- Code Panel --- */
 .slide-presentation .code-panel {
     overflow: hidden;
-    border: 1px solid #475569;
+    border: 1px solid var(--slide-border);
     border-radius: var(--slide-radius);
-    background: #080e1c;
-    box-shadow: 0 8px 32px -8px #0008;
+    background: var(--slide-bg);
+    box-shadow: 0 8px 32px -8px rgba(0,0,0,0.5);
 }
 .slide-presentation .code-panel figcaption {
     display: flex;
@@ -438,9 +438,9 @@
     align-items: center;
     background: var(--slide-surface-raised);
     padding: 0.8rem 1.2rem;
-    color: #c7d2fe;
+    color: var(--slide-text-heading);
     font-size: 0.8rem;
-    border-bottom: 1px solid #334155;
+    border-bottom: 1px solid var(--slide-border);
 }
 .slide-presentation .code-panel figcaption::before {
     content: '';
@@ -459,7 +459,7 @@
     white-space: pre;
     font-size: 0.95rem;
     line-height: 1.9;
-    color: #c7d2fe;
+    color: var(--slide-text-heading);
     tab-size: 4;
 }
 
@@ -479,7 +479,7 @@
 }
 .slide-presentation .slide-image figcaption {
     padding: 1rem;
-    color: #cbd5e1;
+    color: var(--slide-text-muted);
     font-size: 0.85rem;
 }
 
@@ -487,12 +487,12 @@
    LAYOUT: EXAMPLE — Purple left border accent
    ================================================ */
 .slide-presentation .layout-example .slide-composition {
-    border-left: 3px solid #a78bfa;
+    border-left: 3px solid var(--slide-gradient-end);
     padding-left: 1.5rem;
 }
 .slide-presentation .layout-example .learning-point {
-    background: #19152e;
-    border-color: #6d28d944;
+    background: var(--slide-surface);
+    border-color: var(--slide-accent-soft);
 }
 .slide-presentation .layout-example .slide-heading::after {
     content: '💡';
@@ -505,7 +505,7 @@
    LAYOUT: SUMMARY — Clean checklist
    ================================================ */
 .slide-presentation .layout-summary .slide-heading h2 {
-    color: #c4b5fd;
+    color: var(--slide-accent);
 }
 .slide-presentation .layout-summary .learning-point {
     border: 0;
@@ -523,20 +523,20 @@
     max-width: 850px;
 }
 .slide-presentation .layout-summary .point-icon {
-    color: #34d399;
+    color: var(--slide-accent);
 }
 
 /* ================================================
    LAYOUT: CHECKPOINT — Interactive quiz-like
    ================================================ */
 .slide-presentation .layout-checkpoint .slide-composition {
-    border: 1px solid #6366f166;
+    border: 1px solid var(--slide-accent-soft);
     border-radius: 1.25rem;
     padding: clamp(1rem, 3vw, 2rem);
-    background: #1e1b4b33;
+    background: var(--slide-surface)33;
 }
 .slide-presentation .layout-checkpoint .slide-heading h2 {
-    color: #a5b4fc;
+    color: var(--slide-accent);
 }
 
 /* ================================================
@@ -546,10 +546,10 @@
     font-size: clamp(1.3rem, 2.3vw, 2rem);
     font-weight: 500;
     line-height: 1.7;
-    border-left: 3px solid #a78bfa;
+    border-left: 3px solid var(--slide-gradient-end);
     padding: 1rem 2rem;
     white-space: pre-wrap;
-    color: #ddd6fe;
+    color: var(--slide-text);
 }
 
 /* ================================================
@@ -566,7 +566,7 @@
 /* --- Callout --- */
 .slide-presentation .learning-callout {
     border-left: 3px solid var(--slide-gradient-start);
-    background: #312e8133;
+    background: var(--slide-surface-raised);
     border-radius: 0 var(--slide-radius-sm) var(--slide-radius-sm) 0;
     padding: 1.2rem 1.5rem;
     position: relative;
@@ -583,8 +583,8 @@
     background: #14532d22;
 }
 .slide-presentation .learning-callout[data-label="CONTOH"] {
-    border-left-color: #a78bfa;
-    background: #312e8133;
+    border-left-color: var(--slide-gradient-end);
+    background: var(--slide-surface-raised);
 }
 .slide-presentation .learning-callout[data-label="INGAT"],
 .slide-presentation .learning-callout[data-label="PERHATIKAN"] {
@@ -595,7 +595,7 @@
 /* --- Table / Comparison scroll --- */
 .slide-presentation .comparison-scroll {
     overflow: auto;
-    border: 1px solid #475569;
+    border: 1px solid var(--slide-border);
     border-radius: var(--slide-radius);
 }
 .slide-presentation table {
@@ -613,8 +613,8 @@
     white-space: pre-wrap;
 }
 .slide-presentation th {
-    background: #312e8166;
-    color: #c7d2fe;
+    background: var(--slide-surface-raised);
+    color: var(--slide-text-heading);
     font-weight: 700;
 }
 .slide-presentation td {
@@ -729,7 +729,7 @@
 .slide-presentation .slide-takeaway p {
     margin-top: 0.5rem;
     line-height: 1.8;
-    color: #cbd5e1;
+    color: var(--slide-text-muted);
     white-space: pre-wrap;
 }
 
@@ -747,7 +747,7 @@
     width: fit-content;
 }
 .slide-presentation .slide-source[open] {
-    color: #cbd5e1;
+    color: var(--slide-text-muted);
 }
 .slide-presentation .slide-source > div {
     padding: 1rem;
@@ -760,7 +760,7 @@
     position: sticky;
     bottom: 0;
     z-index: 10;
-    background: #0f172af5;
+    background: var(--slide-surface);
     backdrop-filter: blur(8px);
 }
 .slide-presentation .slide-select {

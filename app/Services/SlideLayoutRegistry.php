@@ -71,4 +71,14 @@ class SlideLayoutRegistry
     {
         return self::LAYOUTS;
     }
+
+    /**
+     * Get array of all valid keys for validation (including aliases).
+     *
+     * @return array<string>
+     */
+    public static function getValidationKeys(): array
+    {
+        return array_merge(array_keys(self::LAYOUTS), array_keys(self::ALIASES));
+    }
 }
