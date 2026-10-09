@@ -35,28 +35,52 @@ class MaterialService
     }
 
     /** @return list<string> */
-    public function publicationErrors(LearningMaterial $material): array
+    /**
+     * @return array<int, array{key: string, label: string, passed: bool}>
+     */
+    public function getPublicationReadiness(LearningMaterial $material): array
     {
         $material->loadMissing(['section.course.instructor.role', 'documents.extraction']);
         $course = $material->section?->course;
-        if (! $course || $course->status === Course::STATUS_ARCHIVED || $material->section->status !== 'active'
-            || ! $course->instructor?->is_active || ! $course->instructor->isInstructor()) {
-            return ['Materi harus berada pada chapter aktif dan kursus dengan instruktur aktif yang valid.'];
-        }
-        if (trim($material->title) === '' || in_array($material->status, ['processing', 'archived'], true)) {
-            return ['Judul atau status materi belum siap dipublikasikan.'];
-        }
+
+        $courseValid = $course && $course->status !== Course::STATUS_ARCHIVED
+            && $material->section->status === 'active'
+            && $course->instructor?->is_active
+            && $course->instructor->isInstructor();
+
+        $statusValid = trim((string) $material->title) !== '' && ! in_array($material->status, ['processing', 'archived'], true);
+
+        $docsValid = true;
         foreach ($material->documents as $document) {
-            if ($document->extraction?->status !== 'completed' || trim($document->extraction->content) === '') {
-                return ['Seluruh dokumen harus selesai diproses tanpa kegagalan sebelum publikasi.'];
+            if ($document->extraction?->status !== 'completed' || trim((string) $document->extraction->content) === '') {
+                $docsValid = false;
+                break;
             }
         }
-        if (trim(strip_tags($material->content ?? '')) === '' && $material->documents->isEmpty()
-            && ! $material->publishedSlidebook()->exists()) {
-            return ['Tambahkan konten teks, dokumen yang berhasil diproses, atau Slidebook published.'];
+
+        $contentValid = trim(strip_tags((string) $material->content)) !== ''
+            || $material->documents->isNotEmpty()
+            || $material->publishedSlidebook()->exists();
+
+        return [
+            ['key' => 'course_active', 'label' => 'Kursus dan instruktur aktif', 'passed' => (bool) $courseValid],
+            ['key' => 'status_ready', 'label' => 'Judul dan status siap', 'passed' => (bool) $statusValid],
+            ['key' => 'docs_processed', 'label' => 'Dokumen selesai diproses (jika ada)', 'passed' => $docsValid],
+            ['key' => 'content_exists', 'label' => 'Memiliki konten, dokumen, atau Slidebook', 'passed' => (bool) $contentValid],
+        ];
+    }
+
+    public function publicationErrors(LearningMaterial $material): array
+    {
+        $readiness = $this->getPublicationReadiness($material);
+        $errors = [];
+        foreach ($readiness as $check) {
+            if (! $check['passed']) {
+                $errors[] = $check['label'].' belum terpenuhi.';
+            }
         }
 
-        return [];
+        return $errors;
     }
 
     public function publishMaterial(LearningMaterial $material): void

@@ -93,6 +93,7 @@ Route::middleware(['auth', 'role:instructor'])
         Route::get('/sections/{section}/materials/create', [InstructorMaterialController::class, 'create'])->name('materials.create');
         Route::post('/sections/{section}/materials', [InstructorMaterialController::class, 'store'])->name('materials.store');
         Route::get('/materials/{material}/edit', [InstructorMaterialController::class, 'edit'])->name('materials.edit');
+        Route::get('/materials/{material}/preview', [InstructorMaterialController::class, 'preview'])->name('materials.preview');
         Route::post('/materials/{material}/publish', [InstructorMaterialController::class, 'publish'])->name('materials.publish');
         Route::post('/materials/{material}/unpublish', [InstructorMaterialController::class, 'unpublish'])->name('materials.unpublish');
         Route::put('/materials/{material}', [InstructorMaterialController::class, 'update'])->name('materials.update');

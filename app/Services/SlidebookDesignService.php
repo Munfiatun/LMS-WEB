@@ -29,6 +29,7 @@ class SlidebookDesignService
     {
         $presets = [
             'indigo-dark' => [
+                '--slide-color-scheme' => 'dark',
                 '--slide-bg' => '#020617', // slate-950
                 '--slide-surface' => '#0f172a', // slate-900
                 '--slide-surface-raised' => '#1e293b', // slate-800
@@ -44,6 +45,7 @@ class SlidebookDesignService
                 'font_class' => 'font-sans',
             ],
             'modern-tech' => [
+                '--slide-color-scheme' => 'dark',
                 '--slide-bg' => '#09090b', // zinc-950
                 '--slide-surface' => '#18181b', // zinc-900
                 '--slide-surface-raised' => '#27272a', // zinc-800
@@ -59,6 +61,7 @@ class SlidebookDesignService
                 'font_class' => 'font-sans',
             ],
             'academic-blue' => [
+                '--slide-color-scheme' => 'light',
                 '--slide-bg' => '#f8fafc', // slate-50 (light mode)
                 '--slide-surface' => '#ffffff', // white
                 '--slide-surface-raised' => '#f1f5f9', // slate-100
@@ -74,6 +77,7 @@ class SlidebookDesignService
                 'font_class' => 'font-serif',
             ],
             'creative-education' => [
+                '--slide-color-scheme' => 'light',
                 '--slide-bg' => '#fff1f2', // rose-50
                 '--slide-surface' => '#ffffff', // white
                 '--slide-surface-raised' => '#ffe4e6', // rose-100
@@ -89,6 +93,7 @@ class SlidebookDesignService
                 'font_class' => 'font-sans',
             ],
             'fresh-learning' => [
+                '--slide-color-scheme' => 'light',
                 '--slide-bg' => '#f0fdf4', // green-50
                 '--slide-surface' => '#ffffff', // white
                 '--slide-surface-raised' => '#dcfce7', // green-100
@@ -104,6 +109,7 @@ class SlidebookDesignService
                 'font_class' => 'font-sans',
             ],
             'minimalist' => [
+                '--slide-color-scheme' => 'light',
                 '--slide-bg' => '#ffffff', // white
                 '--slide-surface' => '#f9fafb', // gray-50
                 '--slide-surface-raised' => '#f3f4f6', // gray-100
@@ -117,14 +123,14 @@ class SlidebookDesignService
                 '--slide-accent' => '#9ca3af', // gray-400
                 '--slide-accent-soft' => '#d1d5db55',
                 'font_class' => 'font-sans font-light',
-            ]
+            ],
         ];
 
         return $presets[$preset] ?? $presets['indigo-dark'];
     }
 
     /**
-     * @param array<string, string> $tokens
+     * @param  array<string, string>  $tokens
      */
     private function buildCssVariables(array $tokens): string
     {
@@ -134,6 +140,7 @@ class SlidebookDesignService
                 $css[] = "$key: $value;";
             }
         }
+
         return implode(' ', $css);
     }
 }

@@ -50,7 +50,14 @@
     <!-- Konten Materi -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">
-            @if($material->publishedSlidebook && $material->publishedSlidebook->isPublished())
+            @if(!empty($isPreview) && $material->slidebook)
+                <div class="w-full h-[650px] rounded-2xl bg-black border-2 border-indigo-500/30 shadow-2xl overflow-hidden relative">
+                    <iframe src="{{ route('instructor.slidebooks.preview', $material->slidebook) }}" class="w-full h-full border-none"></iframe>
+                    <div class="absolute top-4 left-4 pointer-events-none">
+                        <span class="px-3 py-1 text-xs font-bold uppercase rounded-full bg-indigo-600/90 text-white shadow-lg backdrop-blur">Instructor Preview (v{{ $material->slidebook->version }})</span>
+                    </div>
+                </div>
+            @elseif($material->publishedSlidebook && $material->publishedSlidebook->isPublished())
                 <!-- Tampilkan Slidebook Viewer Existing dalam iframe agar tidak kehilangan konteks Navigasi Kursus -->
                 <div class="w-full h-[650px] rounded-2xl bg-slate-950 border border-slate-800 shadow-xl overflow-hidden relative">
                     <iframe src="{{ route('student.slidebooks.show', $material->publishedSlidebook) }}" class="w-full h-full border-none"></iframe>

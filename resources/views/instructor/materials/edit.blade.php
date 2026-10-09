@@ -6,19 +6,65 @@
 @endphp
 
 @section('content')
-@if($material->status === 'published')
-    <form action="{{ route('instructor.materials.unpublish', $material) }}" method="POST">
-        @csrf
-        <button type="submit">Kembalikan ke Draft untuk Edit</button>
-    </form>
-@elseif($publicationErrors === [])
-    <form action="{{ route('instructor.materials.publish', $material) }}" method="POST">
-        @csrf
-        <button type="submit">Publikasikan Materi</button>
-    </form>
-@else
-    <p class="text-sm text-amber-300">{{ implode(' ', $publicationErrors) }}</p>
-@endif
+    @if($material->status === 'published')
+        <div class="mb-8 p-6 rounded-2xl bg-emerald-950/30 border border-emerald-500/20 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+                <h3 class="text-emerald-400 font-bold flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                    Materi Terpublikasi
+                </h3>
+                <p class="text-sm text-slate-300 mt-1">Siswa dapat melihat materi ini. Untuk mengedit konten, kembalikan statusnya ke draft.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('instructor.materials.preview', $material) }}" target="_blank" class="px-4 py-2 text-sm font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors">
+                    Preview as Student
+                </a>
+                <form action="{{ route('instructor.materials.unpublish', $material) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="px-5 py-2.5 text-sm font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl shadow-lg transition-colors">
+                        Return to Draft untuk Edit
+                    </button>
+                </form>
+            </div>
+        </div>
+    @else
+        <div class="mb-8 p-6 rounded-2xl bg-slate-900/80 border border-slate-800 flex flex-col lg:flex-row justify-between gap-6">
+            <div class="flex-1">
+                <h3 class="text-white font-bold mb-3">Publication Readiness</h3>
+                <ul class="space-y-2">
+                    @foreach($publicationReadiness as $check)
+                        <li class="flex items-center gap-2 text-sm">
+                            @if($check['passed'])
+                                <svg class="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                <span class="text-slate-300">{{ $check['label'] }}</span>
+                            @else
+                                <svg class="w-5 h-5 text-rose-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                <span class="text-rose-300">{{ $check['label'] }}</span>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+            <div class="flex flex-col justify-end gap-3 lg:w-64">
+                <a href="{{ route('instructor.materials.preview', $material) }}" target="_blank" class="w-full text-center px-4 py-2 text-sm font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors">
+                    Preview as Student
+                </a>
+                <form action="{{ route('instructor.materials.publish', $material) }}" method="POST">
+                    @csrf
+                    @if(empty($publicationErrors))
+                        <button type="submit" class="w-full px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/30 transition-colors">
+                            Publish Material
+                        </button>
+                    @else
+                        <button type="button" disabled class="w-full px-5 py-2.5 text-sm font-bold text-slate-500 bg-slate-800 rounded-xl cursor-not-allowed border border-slate-700">
+                            Publish Material
+                        </button>
+                        <p class="text-[11px] text-rose-400 mt-2 text-center">Penuhi semua syarat untuk publikasi</p>
+                    @endif
+                </form>
+            </div>
+        </div>
+    @endif
 <div class="space-y-8" x-data="{ deleteConfirm: null }">
     {{-- Top Nav Bar --}}
     <div class="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-violet-950/30 to-slate-900 border border-slate-800 shadow-xl">

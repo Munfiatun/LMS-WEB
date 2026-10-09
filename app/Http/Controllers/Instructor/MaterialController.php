@@ -38,8 +38,9 @@ class MaterialController extends Controller
         ]);
 
         $publicationErrors = $service->publicationErrors($material);
+        $publicationReadiness = $service->getPublicationReadiness($material);
 
-        return view('instructor.materials.edit', compact('material', 'publicationErrors'));
+        return view('instructor.materials.edit', compact('material', 'publicationErrors', 'publicationReadiness'));
     }
 
     public function update(StoreMaterialRequest $request, LearningMaterial $material, MaterialService $service): RedirectResponse
@@ -57,6 +58,25 @@ class MaterialController extends Controller
         $service->publishMaterial($material);
 
         return back()->with('success', 'Materi berhasil dipublikasikan.');
+    }
+
+    public function preview(LearningMaterial $material): View
+    {
+        Gate::authorize('update', $material);
+
+        $material->loadMissing(['section.course']);
+        $course = $material->section->course;
+
+        $course->load(['sections.materials' => fn ($query) => $query->published(), 'quizzes' => fn ($query) => $query->available()]);
+
+        // For preview, load draft/review slidebook as well
+        $material->load(['slidebook', 'documents']);
+
+        $isCompleted = false;
+        $completedMaterialIds = [];
+        $isPreview = true;
+
+        return view('student.materials.show', compact('course', 'material', 'isCompleted', 'completedMaterialIds', 'isPreview'));
     }
 
     public function unpublish(LearningMaterial $material, MaterialService $service): RedirectResponse

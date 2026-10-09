@@ -10,7 +10,7 @@
     --slide-radius: 1.1rem;
     --slide-radius-sm: 0.7rem;
     --reveal-stagger: 120ms;
-    color-scheme: dark;
+    color-scheme: var(--slide-color-scheme, dark);
     overflow-wrap: anywhere;
     background-color: var(--slide-bg);
     color: var(--slide-text);
@@ -18,7 +18,7 @@
 
 /* --- Focus & Accessibility --- */
 .slide-presentation :focus-visible {
-    outline: 2px solid var(--slide-violet);
+    outline: 2px solid var(--slide-primary);
     outline-offset: 5px;
 }
 
@@ -57,7 +57,7 @@
     transform: none;
 }
 .slide-presentation .presentation-primary {
-    background: var(--slide-indigo);
+    background: var(--slide-primary);
     border-color: var(--slide-primary);
     color: white;
 }
@@ -151,7 +151,7 @@
     font-weight: 700;
     letter-spacing: 0.13em;
     text-transform: uppercase;
-    color: var(--slide-violet);
+    color: var(--slide-primary);
 }
 .slide-presentation .slide-heading .slide-kicker {
     border: 1px solid var(--slide-accent-soft);
@@ -254,7 +254,7 @@
 .slide-presentation .concept-mark {
     display: grid;
     place-items: center;
-    color: var(--slide-violet);
+    color: var(--slide-primary);
     background: linear-gradient(135deg, var(--slide-surface-raised), var(--slide-surface-raised));
     border: 1px solid var(--slide-accent-soft);
     aspect-ratio: 1;
@@ -318,7 +318,7 @@
     margin-bottom: 1.2rem;
 }
 .slide-presentation .layout-comparison .slide-block:nth-child(even) .learning-point {
-    border-top-color: var(--slide-violet);
+    border-top-color: var(--slide-primary);
     background: var(--slide-surface);
 }
 .slide-presentation .layout-comparison .slide-block:nth-child(odd) .learning-point::before {
@@ -349,7 +349,7 @@
     display: grid;
     place-items: center;
     border-radius: 999px;
-    background: var(--slide-violet);
+    background: var(--slide-primary);
     color: var(--slide-surface);
     opacity: 0.6;
 }
@@ -390,7 +390,7 @@
     width: 2.4rem;
     height: 2.4rem;
     flex-shrink: 0;
-    background: linear-gradient(135deg, var(--slide-indigo), #7c3aed);
+    background: linear-gradient(135deg, var(--slide-gradient-start), var(--slide-gradient-end));
     border-radius: var(--slide-radius-sm);
     font-size: 0.9rem;
     font-weight: 700;
@@ -533,7 +533,7 @@
     border: 1px solid var(--slide-accent-soft);
     border-radius: 1.25rem;
     padding: clamp(1rem, 3vw, 2rem);
-    background: var(--slide-surface)33;
+    background: var(--slide-surface-raised);
 }
 .slide-presentation .layout-checkpoint .slide-heading h2 {
     color: var(--slide-accent);
@@ -628,8 +628,8 @@
 /* ================================================
    LAYOUT: COVER & SECTION-DIVIDER
    ================================================ */
-.slide-presentation .layout-cover .presentation-slide,
-.slide-presentation .layout-section-divider .presentation-slide {
+.slide-presentation .presentation-slide.layout-cover,
+.slide-presentation .presentation-slide.layout-section-divider {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -640,7 +640,7 @@
 .slide-presentation .layout-cover .slide-heading h2,
 .slide-presentation .layout-closing .slide-heading h2 {
     font-size: clamp(3rem, 6vw, 5rem);
-    background: linear-gradient(135deg, var(--slide-text-heading), var(--slide-violet));
+    background: linear-gradient(135deg, var(--slide-text-heading), var(--slide-gradient-end));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     max-width: 20ch;
@@ -671,7 +671,7 @@
 /* ================================================
    LAYOUT: CLOSING
    ================================================ */
-.slide-presentation .layout-closing .presentation-slide {
+.slide-presentation .presentation-slide.layout-closing {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -684,7 +684,7 @@
    LAYOUT: TIMELINE
    ================================================ */
 .slide-presentation .layout-timeline .slide-blocks {
-    border-left: 3px solid var(--slide-violet);
+    border-left: 3px solid var(--slide-primary);
     padding-left: 1.5rem;
     margin-left: 1rem;
     gap: 2rem;
@@ -702,7 +702,7 @@
     width: 1rem;
     height: 1rem;
     border-radius: 999px;
-    background: var(--slide-violet);
+    background: var(--slide-primary);
     border: 3px solid var(--slide-bg);
 }
 
