@@ -92,6 +92,7 @@ function enhanceSlidebookThemePicker() {
     const form = select.closest('form');
     const fieldContainer = select.parentElement;
     const studentPreviewLink = document.querySelector('a[href*="/slidebooks/"][href$="/preview"]');
+    const submitButton = form?.querySelector('button[type="submit"]');
     if (!form || !fieldContainer) {
         return;
     }
@@ -125,23 +126,47 @@ function enhanceSlidebookThemePicker() {
             </div>
             <span data-preview-theme class="inline-flex w-fit rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-indigo-300"></span>
         </div>
-        <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner">
+        <div class="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner">
+            <div data-preview-loading class="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/90 text-xs font-semibold text-slate-300 transition-opacity">
+                Memuat pratinjau…
+            </div>
             <div class="aspect-video min-h-[280px] w-full">
                 <iframe data-theme-live-preview class="h-full min-h-[280px] w-full border-0 bg-slate-950" title="Live preview desain Slidebook" loading="lazy" sandbox="allow-scripts allow-same-origin"></iframe>
             </div>
         </div>
         <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
             <span>Gunakan preview penuh untuk mengecek semua 18 slide.</span>
-            <a data-open-full-preview target="_blank" rel="noopener" class="font-semibold text-indigo-300 hover:text-indigo-200">Buka Preview Penuh ↗</a>
+            <div class="flex items-center gap-3">
+                <button type="button" data-reset-theme class="hidden font-semibold text-slate-400 hover:text-white">Kembalikan tema tersimpan</button>
+                <a data-open-full-preview target="_blank" rel="noopener" class="font-semibold text-indigo-300 hover:text-indigo-200">Buka Preview Penuh ↗</a>
+            </div>
         </div>
     `;
 
     const stateBadge = intro.querySelector('[data-theme-state]');
     const previewThemeBadge = livePreview.querySelector('[data-preview-theme]');
     const previewFrame = livePreview.querySelector('[data-theme-live-preview]');
+    const previewLoading = livePreview.querySelector('[data-preview-loading]');
     const fullPreviewLink = livePreview.querySelector('[data-open-full-preview]');
+    const resetButton = livePreview.querySelector('[data-reset-theme]');
     const cards = new Map();
     const initialValue = select.value;
+    let isDirty = false;
+
+    const beforeUnloadHandler = (event) => {
+        if (!isDirty) {
+            return;
+        }
+        event.preventDefault();
+        event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+
+    form.addEventListener('submit', () => {
+        isDirty = false;
+        window.removeEventListener('beforeunload', beforeUnloadHandler);
+    });
 
     const previewUrlFor = (preset) => {
         if (!studentPreviewLink) {
@@ -169,6 +194,12 @@ function enhanceSlidebookThemePicker() {
 
         livePreview.classList.remove('hidden');
         if (previewFrame) {
+            if (previewLoading) {
+                previewLoading.classList.remove('pointer-events-none', 'opacity-0');
+            }
+            previewFrame.onload = () => {
+                previewLoading?.classList.add('pointer-events-none', 'opacity-0');
+            };
             previewFrame.src = previewUrl.toString();
         }
         if (fullPreviewLink) {
@@ -193,16 +224,32 @@ function enhanceSlidebookThemePicker() {
             }
         });
 
-        const changed = select.value !== initialValue;
+        isDirty = select.value !== initialValue;
+        form.dataset.themeDirty = isDirty ? 'true' : 'false';
+
         if (stateBadge) {
-            stateBadge.textContent = changed ? 'Belum disimpan' : 'Tersimpan';
-            stateBadge.className = changed
+            stateBadge.textContent = isDirty ? 'Belum disimpan' : 'Tersimpan';
+            stateBadge.className = isDirty
                 ? 'inline-flex w-fit items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-300'
                 : 'inline-flex w-fit items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-300';
         }
 
+        if (submitButton) {
+            submitButton.disabled = !isDirty;
+            submitButton.textContent = isDirty ? 'Simpan Desain' : 'Desain Tersimpan';
+            submitButton.classList.toggle('opacity-50', !isDirty);
+            submitButton.classList.toggle('cursor-not-allowed', !isDirty);
+        }
+
+        resetButton?.classList.toggle('hidden', !isDirty);
         refreshLivePreview();
     };
+
+    resetButton?.addEventListener('click', () => {
+        select.value = initialValue;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        renderSelection();
+    });
 
     slidebookThemes.forEach((theme) => {
         const button = document.createElement('button');
