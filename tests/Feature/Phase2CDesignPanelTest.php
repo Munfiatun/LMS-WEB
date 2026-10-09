@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\LearningMaterial;
+use App\Models\Role;
 use App\Models\Slidebook;
 use App\Models\User;
 use Database\Seeders\CategorySeeder;
@@ -84,6 +85,77 @@ class Phase2CDesignPanelTest extends TestCase
             ->all();
 
         $this->assertSame($before, $after);
+    }
+
+    public function test_theme_update_preserves_existing_design_settings(): void
+    {
+        $this->seedDemo();
+
+        $instructor = User::where('email', 'instructor@example.com')->firstOrFail();
+        $material = LearningMaterial::where('slug', 'slidebook-layout-gallery')->firstOrFail();
+        $slidebook = $material->slidebooks()->latest('version')->firstOrFail();
+
+        $slidebook->update([
+            'design_settings' => [
+                'preset' => 'modern-tech',
+                'spacing' => 'comfortable',
+            ],
+        ]);
+
+        $this->actingAs($instructor)
+            ->put(route('instructor.slidebooks.design.update', $slidebook), [
+                'preset' => 'fresh-learning',
+            ])
+            ->assertRedirect();
+
+        $slidebook->refresh();
+        $this->assertSame('fresh-learning', $slidebook->design_settings['preset'] ?? null);
+        $this->assertSame('comfortable', $slidebook->design_settings['spacing'] ?? null);
+    }
+
+    public function test_invalid_theme_preset_is_rejected_without_mutating_design(): void
+    {
+        $this->seedDemo();
+
+        $instructor = User::where('email', 'instructor@example.com')->firstOrFail();
+        $material = LearningMaterial::where('slug', 'slidebook-layout-gallery')->firstOrFail();
+        $slidebook = $material->slidebooks()->latest('version')->firstOrFail();
+        $original = $slidebook->design_settings;
+
+        $this->actingAs($instructor)
+            ->from(route('instructor.materials.slidebook.review', $material))
+            ->put(route('instructor.slidebooks.design.update', $slidebook), [
+                'preset' => 'unknown-theme',
+            ])
+            ->assertRedirect(route('instructor.materials.slidebook.review', $material))
+            ->assertSessionHasErrors('preset');
+
+        $slidebook->refresh();
+        $this->assertSame($original, $slidebook->design_settings);
+    }
+
+    public function test_other_instructor_cannot_change_slidebook_design(): void
+    {
+        $this->seedDemo();
+
+        $material = LearningMaterial::where('slug', 'slidebook-layout-gallery')->firstOrFail();
+        $slidebook = $material->slidebooks()->latest('version')->firstOrFail();
+        $original = $slidebook->design_settings;
+        $instructorRole = Role::where('name', Role::ROLE_INSTRUCTOR)->firstOrFail();
+
+        $otherInstructor = User::factory()->create([
+            'role_id' => $instructorRole->id,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($otherInstructor)
+            ->put(route('instructor.slidebooks.design.update', $slidebook), [
+                'preset' => 'minimalist',
+            ])
+            ->assertForbidden();
+
+        $slidebook->refresh();
+        $this->assertSame($original, $slidebook->design_settings);
     }
 
     public function test_published_slidebook_design_cannot_be_changed_directly(): void
