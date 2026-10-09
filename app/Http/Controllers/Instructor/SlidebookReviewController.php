@@ -130,7 +130,10 @@ class SlidebookReviewController extends Controller
         Gate::authorize('update', $slidebook);
 
         $slidebook->update([
-            'design_settings' => $request->validated(),
+            'design_settings' => array_merge(
+                $slidebook->design_settings ?? [],
+                $request->validated()
+            ),
         ]);
 
         return back()->with('success', 'Pengaturan desain berhasil diperbarui.');
