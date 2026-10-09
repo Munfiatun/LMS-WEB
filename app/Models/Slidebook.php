@@ -21,6 +21,13 @@ class Slidebook extends Model
     public const STATUS_ARCHIVED = 'archived';
 
     /**
+     * @var array<string, string>
+     */
+    protected $attributes = [
+        'design_settings' => '{"preset": "indigo-dark"}',
+    ];
+
+    /**
      * @var list<string>
      */
     protected $fillable = [
@@ -30,6 +37,7 @@ class Slidebook extends Model
         'description',
         'status',
         'version',
+        'design_settings',
         'created_by',
         'approved_by',
         'published_at',
@@ -43,6 +51,7 @@ class Slidebook extends Model
         return [
             'version' => 'integer',
             'published_at' => 'datetime',
+            'design_settings' => 'array',
         ];
     }
 

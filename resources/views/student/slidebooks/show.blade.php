@@ -1,16 +1,18 @@
 @extends('layouts.guest', ['focusMode' => true])
 @inject('presenter', 'App\Services\SlidePresentation')
+@inject('designService', 'App\Services\SlidebookDesignService')
 
 @php
     $title = $slidebook->title . ' — Presentasi Slidebook';
     $preview = $isPreview ?? false;
     $returnUrl = $preview ? route('instructor.materials.slidebook.review', $material) : route('student.courses.continue', $course);
     $totalSlides = $slides->count();
+    $designTokens = $designService->getDesignTokens($slidebook);
 @endphp
 
 @section('content')
 @include('student.slidebooks.presentation-styles')
-<div class="slide-presentation min-h-screen bg-slate-950 text-slate-100 flex flex-col" x-data="studentSlidePresentation({{ $totalSlides }})" @keydown.window="handleKey($event)">
+<div class="slide-presentation min-h-screen flex flex-col {{ $designTokens['font_class'] ?? 'font-sans' }}" style="{{ $designTokens['css_variables'] ?? '' }}" x-data="studentSlidePresentation({{ $totalSlides }})" @keydown.window="handleKey($event)">
     {{-- Header --}}
     <header class="presentation-header border-b border-slate-800 flex items-center justify-between gap-4 px-4 py-4 sm:px-8">
         <div class="min-w-0 flex items-center gap-4">
@@ -83,7 +85,7 @@
                         <div class="slide-blocks">
                             @foreach($presentation['blocks'] as $block)
                                 <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 4) * 120 }}ms">
-                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter])
+                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
                                 </div>
                             @endforeach
                         </div>
@@ -94,7 +96,7 @@
                             @foreach($presentation['blocks'] as $block)
                                 <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 6) * 150 }}ms"
                                      @if($loop->index >= 5) x-show="visibleBlocks > {{ $loop->index }}" x-cloak @endif>
-                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter])
+                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
                                 </div>
                             @endforeach
                         </div>
@@ -105,7 +107,7 @@
                             @foreach($presentation['blocks'] as $block)
                                 <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 5) * 100 }}ms"
                                      @if($loop->index >= 6) x-show="visibleBlocks > {{ $loop->index }}" x-cloak @endif>
-                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter])
+                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
                                 </div>
                             @endforeach
                         </div>
@@ -115,7 +117,7 @@
                         <div class="slide-blocks">
                             @foreach($presentation['blocks'] as $block)
                                 <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 6) * 80 }}ms">
-                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter])
+                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
                                 </div>
                             @endforeach
                         </div>
@@ -126,7 +128,7 @@
                             @foreach($presentation['blocks'] as $block)
                                 <div class="slide-block block-{{ $block['type'] }}" data-reveal style="--reveal-delay: {{ min($loop->index, 4) * 100 }}ms"
                                      @if($loop->index >= 5) x-show="visibleBlocks > {{ $loop->index }}" x-cloak @endif>
-                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter])
+                                    @include('student.slidebooks.presentation-block', ['block' => $block, 'layout' => $presentation['layout'], 'presenter' => $presenter, 'designTokens' => $designTokens])
                                 </div>
                             @endforeach
                         </div>

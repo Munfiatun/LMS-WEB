@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\LearningMaterial;
 use App\Models\Slidebook;
 use App\Services\SlidebookService;
+use App\Http\Requests\UpdateSlidebookDesignRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -97,5 +98,16 @@ class SlidebookReviewController extends Controller
 
         return redirect()->route('instructor.materials.slidebook.review', $slidebook->material_id)
             ->with('success', 'Revision draft siap diedit. Versi published tetap tersedia untuk siswa.');
+    }
+
+    public function updateDesign(UpdateSlidebookDesignRequest $request, Slidebook $slidebook): RedirectResponse
+    {
+        Gate::authorize('update', $slidebook);
+
+        $slidebook->update([
+            'design_settings' => $request->validated(),
+        ]);
+
+        return back()->with('success', 'Pengaturan desain berhasil diperbarui.');
     }
 }

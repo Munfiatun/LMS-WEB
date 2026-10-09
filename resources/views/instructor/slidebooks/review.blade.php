@@ -87,6 +87,37 @@
         </div>
     </div>
 
+    {{-- Design Configuration Panel --}}
+    @if(in_array($slidebook->status, ['draft', 'review'], true))
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm">
+            <h3 class="text-sm font-bold text-white mb-4">Pengaturan Desain Visual</h3>
+            <form action="{{ route('instructor.slidebooks.design.update', $slidebook) }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                @csrf
+                @method('PUT')
+                @php
+                    $design = $slidebook->design_settings ?? ['preset' => 'indigo-dark'];
+                    $preset = $design['preset'] ?? 'indigo-dark';
+                @endphp
+                <div class="col-span-1 md:col-span-3">
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Preset Tema Desain</label>
+                    <select name="preset" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-indigo-500">
+                        <option value="indigo-dark" {{ $preset === 'indigo-dark' ? 'selected' : '' }}>Indigo Dark (Default)</option>
+                        <option value="modern-tech" {{ $preset === 'modern-tech' ? 'selected' : '' }}>Modern Tech</option>
+                        <option value="academic-blue" {{ $preset === 'academic-blue' ? 'selected' : '' }}>Academic Blue</option>
+                        <option value="creative-education" {{ $preset === 'creative-education' ? 'selected' : '' }}>Creative Education</option>
+                        <option value="fresh-learning" {{ $preset === 'fresh-learning' ? 'selected' : '' }}>Fresh Learning</option>
+                        <option value="minimalist" {{ $preset === 'minimalist' ? 'selected' : '' }}>Minimalist</option>
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="w-full px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-md transition-colors">
+                        Simpan Desain
+                    </button>
+                </div>
+            </form>
+        </div>
+    @endif
+
     {{-- Split Screen: Source Document vs AI Slidebook Deck --}}
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {{-- Left: Source Document Extracted Text (5 Cols) --}}

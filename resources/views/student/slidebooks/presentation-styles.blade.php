@@ -7,23 +7,13 @@
 
 /* --- Design Tokens --- */
 .slide-presentation {
-    --slide-accent: #a5b4fc;
-    --slide-accent-soft: #818cf855;
-    --slide-surface: #0f172a;
-    --slide-surface-raised: #1e293b;
-    --slide-border: #334155;
-    --slide-text: #e2e8f0;
-    --slide-text-muted: #94a3b8;
-    --slide-text-heading: #f8fafc;
-    --slide-gradient-start: #818cf8;
-    --slide-gradient-end: #a78bfa;
-    --slide-indigo: #6366f1;
-    --slide-violet: #c4b5fd;
     --slide-radius: 1.1rem;
     --slide-radius-sm: 0.7rem;
     --reveal-stagger: 120ms;
     color-scheme: dark;
     overflow-wrap: anywhere;
+    background-color: var(--slide-bg);
+    color: var(--slide-text);
 }
 
 /* --- Focus & Accessibility --- */

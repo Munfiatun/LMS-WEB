@@ -109,6 +109,7 @@ Route::middleware(['auth', 'role:instructor'])
         Route::post('/slidebooks/{slidebook}/approve', [SlidebookReviewController::class, 'approve'])->name('slidebooks.approve');
         Route::post('/slidebooks/{slidebook}/publish', [SlidebookReviewController::class, 'publish'])->name('slidebooks.publish');
         Route::get('/slidebooks/{slidebook}/preview', [SlidebookReviewController::class, 'preview'])->name('slidebooks.preview');
+        Route::put('/slidebooks/{slidebook}/design', [SlidebookReviewController::class, 'updateDesign'])->name('slidebooks.design.update');
 
         // Slide CRUD & Reordering
         Route::post('/slidebooks/{slidebook}/slides', [SlideController::class, 'store'])->name('slidebooks.slides.store');

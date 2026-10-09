@@ -70,7 +70,7 @@
                 @if($block['label'])<h3 class="point-label">{!! $presenter->signalText(e($block['label'])) !!}</h3>@endif
                 <p class="point-text">
                     @if($block['type'] === 'item' && $block['ordered'] && !in_array($layout, ['process', 'key-points']))
-                        <span class="text-indigo-300">{{ $block['marker'] }}</span>
+                        <span class="text-[color:var(--slide-accent)]">{{ $block['marker'] }}</span>
                     @endif
                     {!! $presenter->signalText(e($block['text'])) !!}
                 </p>
