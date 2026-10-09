@@ -113,6 +113,7 @@ class RecoveryStabilizationTest extends TestCase
         $this->actingAs($instructor)
             ->get(route('instructor.materials.slidebook.review', $material))
             ->assertOk()
-            ->assertSee('Slidebook v'.$latest->version);
+            ->assertSee('Slidebook v'.$latest->version)
+            ->assertSee('Preview Siswa');
     }
 }
