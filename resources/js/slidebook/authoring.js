@@ -114,13 +114,79 @@ function enhanceLayoutPickers() {
 function cleanDemoOrdinalDisplay(card) {
     const referenceBadge = Array.from(card.querySelectorAll('span')).find((span) => span.textContent.includes('"demo":true'));
     if (!referenceBadge) {
-        return;
+        return false;
     }
 
     const title = card.querySelector('h3');
     if (title) {
         title.textContent = title.textContent.replace(/^\s*\d+\.\s*/, '');
     }
+
+    return true;
+}
+
+function enhanceDemoEditTitles() {
+    const editButtons = Array.from(document.querySelectorAll('button[title="Edit Slide"]'));
+
+    editButtons.forEach((button) => {
+        const card = button.closest('div.rounded-xl.border');
+        if (!card || !cleanDemoOrdinalDisplay(card)) {
+            return;
+        }
+
+        button.addEventListener('click', () => {
+            window.setTimeout(() => {
+                const form = Array.from(document.querySelectorAll('form[action*="/instructor/slides/"]'))
+                    .find((candidate) => candidate.querySelector('input[name="title"]') && candidate.querySelector('textarea[name="content"]'));
+                const titleInput = form?.querySelector('input[name="title"]');
+
+                if (!form || !titleInput) {
+                    return;
+                }
+
+                const originalTitle = titleInput.value;
+                const cleanTitle = originalTitle.replace(/^\s*\d+\.\s*/, '');
+                if (cleanTitle === originalTitle) {
+                    return;
+                }
+
+                titleInput.dataset.demoOriginalTitle = originalTitle;
+                titleInput.dataset.demoCleanTitle = cleanTitle;
+                titleInput.value = cleanTitle;
+                titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+                if (form.dataset.demoTitleGuard === 'ready') {
+                    return;
+                }
+
+                form.dataset.demoTitleGuard = 'ready';
+                form.addEventListener('submit', () => {
+                    const input = form.querySelector('input[name="title"]');
+                    if (!input?.dataset.demoOriginalTitle) {
+                        return;
+                    }
+
+                    if (input.value.trim() === input.dataset.demoCleanTitle.trim()) {
+                        input.value = input.dataset.demoOriginalTitle;
+                    }
+                });
+            }, 0);
+        });
+    });
+}
+
+function hardenNeedsReviewCheckbox() {
+    const checkbox = document.querySelector('input[type="checkbox"][name="needs_review"]');
+    if (!checkbox || checkbox.dataset.falseFallback === 'ready') {
+        return;
+    }
+
+    checkbox.dataset.falseFallback = 'ready';
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'needs_review';
+    hidden.value = '0';
+    checkbox.insertAdjacentElement('beforebegin', hidden);
 }
 
 function enhanceSlideDeckOrdering() {
@@ -318,5 +384,7 @@ function enhanceSlideDeckOrdering() {
 
 export function enhanceSlidebookAuthoring() {
     enhanceLayoutPickers();
+    enhanceDemoEditTitles();
+    hardenNeedsReviewCheckbox();
     enhanceSlideDeckOrdering();
 }
