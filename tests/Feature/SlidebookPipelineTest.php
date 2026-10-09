@@ -301,7 +301,7 @@ class SlidebookPipelineTest extends TestCase
             ['A vs B', "- A: Sifat pertama\n- B: Sifat kedua", 'comparison'],
             ['Kode HTML', "```html\n<script>alert('xss')</script>\n```", 'code'],
             ['Contoh penerapan', 'Contoh dari guru.', 'example'],
-            ['Diagram', "![Diagram guru](/storage/diagram.png)\n\nPenjelasan lengkap.", 'visual'],
+            ['Diagram', "![Diagram guru](/storage/diagram.png)\n\nPenjelasan lengkap.", 'image-focus'],
             ['Rangkuman', '- Intisari sumber.', 'summary'],
             ['Cek pemahaman', "Apa jawabannya?\nA. Satu\nB. Dua", 'checkpoint'],
             ['Kutipan', '> Teks kutipan sumber.', 'quote'],

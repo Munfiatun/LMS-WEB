@@ -74,57 +74,60 @@ class SlidePresentation
         'Boolean', 'String', 'Integer', 'Float',
     ];
 
+    public function __construct(private SlideLayoutRegistry $registry) {}
+
     /**
      * Interpret existing plain-text / Markdown structure without rewriting its content.
      *
      * @return array{layout: string, label: string, blocks: list<array<string, mixed>>, icon: string|null, signalTerms: list<string>}
      */
-    public function present(string $title, ?string $content): array
+    public function present(string $title, ?string $content, ?string $layoutHint = null): array
     {
         $blocks = $this->blocks(str_replace(["\r\n", "\r"], "\n", $content ?? ''));
         $types = array_column($blocks, 'type');
         $items = array_values(array_filter($blocks, fn (array $block): bool => $block['type'] === 'item'));
-        $layout = 'reading';
+        
+        $layout = $layoutHint;
 
-        // Determine layout using content heuristics
-        if (in_array('code', $types, true)) {
-            $layout = 'code';
-        } elseif (in_array('image', $types, true)) {
-            $layout = 'visual';
-        } elseif (in_array('table', $types, true)) {
-            $layout = 'comparison';
-        } elseif (count($blocks) === 1 && $types[0] === 'quote') {
-            $layout = 'quote';
-        } elseif (preg_match('/\b(rangkuman|kesimpulan|intisari|summary|recap|yang perlu diingat)\b/iu', $title)) {
-            $layout = 'summary';
-        } elseif (preg_match('/\b(cek pemahaman|refleksi|checkpoint|evaluasi|latihan)\b/iu', $title)) {
-            $layout = 'checkpoint';
-        } elseif (count($items) >= 2 && preg_match('/\b(vs\.?|versus|perbandingan|perbedaan|dibandingkan)\b/iu', $title)
-            && count(array_filter($items, fn (array $item): bool => $item['label'] !== '')) >= 2) {
-            $layout = 'comparison';
-        } elseif (count($items) >= 2 && ! in_array(false, array_column($items, 'ordered'), true)
-            && preg_match('/\b(proses|alur|langkah|tahapan|mekanisme|sejarah|urutan|workflow|kronologi|prosedur|cara kerja)\b/iu', $title)) {
-            $layout = 'process';
-        } elseif (preg_match('/\b(contoh|studi kasus|penerapan|case study|ilustrasi|skenario|praktik)\b/iu', $title)) {
-            $layout = 'example';
-        } elseif (preg_match('/\b(tujuan|pengantar|pengenalan|pendahuluan|overview|apa (itu|yang)|definisi)\b/iu', $title)) {
-            $layout = count($items) < 2 && count($blocks) <= 2 && mb_strlen($content ?? '') < 600 ? 'concept' : 'key-points';
-        } elseif (count($blocks) <= 1 && mb_strlen($content ?? '') < 450) {
-            $layout = 'concept';
-        } elseif ($this->hasComparisonStructure($blocks)) {
-            $layout = 'comparison';
-        } elseif (count($items) >= 3 && ! in_array(false, array_column($items, 'ordered'), true)) {
-            $layout = 'process';
-        } elseif (count($items) >= 2 || (count($blocks) >= 2 && ! array_diff($types, ['paragraph', 'item']))) {
-            $layout = 'key-points';
+        // Determine layout using content heuristics if hint is empty
+        if (empty($layout)) {
+            $layout = 'reading';
+            if (in_array('code', $types, true)) {
+                $layout = 'code';
+            } elseif (in_array('image', $types, true)) {
+                $layout = 'visual';
+            } elseif (in_array('table', $types, true)) {
+                $layout = 'comparison';
+            } elseif (count($blocks) === 1 && $types[0] === 'quote') {
+                $layout = 'quote';
+            } elseif (preg_match('/\b(rangkuman|kesimpulan|intisari|summary|recap|yang perlu diingat)\b/iu', $title)) {
+                $layout = 'summary';
+            } elseif (preg_match('/\b(cek pemahaman|refleksi|checkpoint|evaluasi|latihan)\b/iu', $title)) {
+                $layout = 'checkpoint';
+            } elseif (count($items) >= 2 && preg_match('/\b(vs\.?|versus|perbandingan|perbedaan|dibandingkan)\b/iu', $title)
+                && count(array_filter($items, fn (array $item): bool => $item['label'] !== '')) >= 2) {
+                $layout = 'comparison';
+            } elseif (count($items) >= 2 && ! in_array(false, array_column($items, 'ordered'), true)
+                && preg_match('/\b(proses|alur|langkah|tahapan|mekanisme|sejarah|urutan|workflow|kronologi|prosedur|cara kerja)\b/iu', $title)) {
+                $layout = 'process';
+            } elseif (preg_match('/\b(contoh|studi kasus|penerapan|case study|ilustrasi|skenario|praktik)\b/iu', $title)) {
+                $layout = 'example';
+            } elseif (preg_match('/\b(tujuan|pengantar|pengenalan|pendahuluan|overview|apa (itu|yang)|definisi)\b/iu', $title)) {
+                $layout = count($items) < 2 && count($blocks) <= 2 && mb_strlen($content ?? '') < 600 ? 'concept' : 'key-points';
+            } elseif (count($blocks) <= 1 && mb_strlen($content ?? '') < 450) {
+                $layout = 'concept';
+            } elseif ($this->hasComparisonStructure($blocks)) {
+                $layout = 'comparison';
+            } elseif (count($items) >= 3 && ! in_array(false, array_column($items, 'ordered'), true)) {
+                $layout = 'process';
+            } elseif (count($items) >= 2 || (count($blocks) >= 2 && ! array_diff($types, ['paragraph', 'item']))) {
+                $layout = 'key-points';
+            }
         }
 
-        $labels = [
-            'concept' => 'Kenali konsep', 'key-points' => 'Poin utama', 'process' => 'Ikuti alurnya',
-            'comparison' => 'Bandingkan konsep', 'code' => 'Baca kodenya', 'example' => 'Contoh penerapan',
-            'visual' => 'Amati visualnya', 'summary' => 'Yang perlu diingat', 'checkpoint' => 'Cek pemahaman',
-            'quote' => 'Renungkan', 'reading' => 'Pahami bertahap',
-        ];
+        // Validate via registry
+        $layout = $this->registry->resolve($layout);
+        $labels = $this->registry->getAvailableLayouts();
 
         // Find matching concept icon
         $icon = $this->findConceptIcon($title.' '.($content ?? ''));
@@ -134,7 +137,7 @@ class SlidePresentation
 
         return [
             'layout' => $layout,
-            'label' => $labels[$layout],
+            'label' => $labels[$layout] ?? 'Slide',
             'blocks' => $blocks,
             'icon' => $icon,
             'signalTerms' => $signalTerms,

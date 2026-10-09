@@ -4,6 +4,7 @@
     $title = 'Review Slidebook: ' . $slidebook->title;
     $breadcrumb = 'Review Slidebook';
 @endphp
+@inject('layoutRegistry', 'App\Services\SlideLayoutRegistry')
 
 @section('content')
 @if(in_array($slidebook->status, ['draft', 'review'], true) && $reviewErrors)
@@ -298,6 +299,17 @@
                 </div>
 
                 <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Layout Presentasi (Opsional)</label>
+                    <select name="layout" x-model="activeSlide.layout"
+                            class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-indigo-500">
+                        <option value="">(Otomatis sesuai konten)</option>
+                        @foreach($layoutRegistry->getAvailableLayouts() as $key => $label)
+                            <option value="{{ $key }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                
+                <div>
                     <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Intisari / Rangkuman</label>
                     <input type="text" name="summary" x-model="activeSlide.summary"
                            class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-indigo-500">
@@ -349,6 +361,17 @@
                     <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Konten Slide <span class="text-rose-400">*</span></label>
                     <textarea name="content" rows="6" required placeholder="Tuliskan poin-poin materi slide..."
                               class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-mono focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Layout Presentasi (Opsional)</label>
+                    <select name="layout"
+                            class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-indigo-500">
+                        <option value="">(Otomatis sesuai konten)</option>
+                        @foreach($layoutRegistry->getAvailableLayouts() as $key => $label)
+                            <option value="{{ $key }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div>

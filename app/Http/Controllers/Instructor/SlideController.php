@@ -27,6 +27,7 @@ class SlideController extends Controller
             'subtitle' => ['nullable', 'string', 'max:255'],
             'content' => ['required', 'string'],
             'summary' => ['nullable', 'string'],
+            'layout' => ['nullable', 'string', 'max:255'],
         ]);
 
         $this->service->addSlide($slidebook, $validated);
@@ -46,6 +47,7 @@ class SlideController extends Controller
             'subtitle' => ['nullable', 'string', 'max:255'],
             'content' => ['required', 'string'],
             'summary' => ['nullable', 'string'],
+            'layout' => ['nullable', 'string', 'max:255'],
             'needs_review' => ['nullable', 'boolean'],
         ]);
 

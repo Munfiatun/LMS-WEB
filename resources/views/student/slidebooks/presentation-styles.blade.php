@@ -407,7 +407,7 @@
    LAYOUT: CODE — Code + explanation side by side
    ================================================ */
 .slide-presentation .layout-code .slide-blocks,
-.slide-presentation .layout-visual .slide-blocks {
+.slide-presentation .layout-image-focus .slide-blocks {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
 }
@@ -419,7 +419,7 @@
     grid-column: 1 / -1;
 }
 .slide-presentation .layout-code .block-code:first-child,
-.slide-presentation .layout-visual .block-image:first-child {
+.slide-presentation .layout-image-focus .block-image:first-child {
     grid-column: 1;
     grid-row: span 3;
 }
@@ -625,6 +625,100 @@
     background: var(--slide-surface-raised);
 }
 
+/* ================================================
+   LAYOUT: COVER & SECTION-DIVIDER
+   ================================================ */
+.slide-presentation .layout-cover .presentation-slide,
+.slide-presentation .layout-section-divider .presentation-slide {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-height: 50vh;
+}
+.slide-presentation .layout-cover .slide-heading h2,
+.slide-presentation .layout-closing .slide-heading h2 {
+    font-size: clamp(3rem, 6vw, 5rem);
+    background: linear-gradient(135deg, var(--slide-text-heading), var(--slide-violet));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    max-width: 20ch;
+    margin: 0 auto;
+}
+.slide-presentation .layout-section-divider .slide-heading h2 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    color: var(--slide-accent);
+}
+.slide-presentation .layout-cover .slide-subtitle,
+.slide-presentation .layout-section-divider .slide-subtitle,
+.slide-presentation .layout-closing .slide-subtitle {
+    margin: 1.5rem auto 0;
+    max-width: 40ch;
+}
+.slide-presentation .layout-cover .slide-heading,
+.slide-presentation .layout-section-divider .slide-heading,
+.slide-presentation .layout-closing .slide-heading {
+    margin-bottom: 2rem;
+    width: 100%;
+}
+.slide-presentation .layout-cover .slide-heading .flex,
+.slide-presentation .layout-section-divider .slide-heading .flex,
+.slide-presentation .layout-closing .slide-heading .flex {
+    justify-content: center;
+}
+
+/* ================================================
+   LAYOUT: CLOSING
+   ================================================ */
+.slide-presentation .layout-closing .presentation-slide {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-height: 50vh;
+}
+
+/* ================================================
+   LAYOUT: TIMELINE
+   ================================================ */
+.slide-presentation .layout-timeline .slide-blocks {
+    border-left: 3px solid var(--slide-violet);
+    padding-left: 1.5rem;
+    margin-left: 1rem;
+    gap: 2rem;
+}
+.slide-presentation .layout-timeline .learning-point {
+    position: relative;
+    border-radius: var(--slide-radius);
+    background: var(--slide-surface-raised);
+}
+.slide-presentation .layout-timeline .learning-point::before {
+    content: '';
+    position: absolute;
+    left: -2.3rem;
+    top: 1.5rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    background: var(--slide-violet);
+    border: 3px solid var(--slide-bg);
+}
+
+/* ================================================
+   LAYOUT: DEFINITION / CASE STUDY
+   ================================================ */
+.slide-presentation .layout-definition .learning-point,
+.slide-presentation .layout-case-study .learning-point {
+    border-left: 4px solid var(--slide-gradient-end);
+}
+.slide-presentation .layout-definition .point-label,
+.slide-presentation .layout-case-study .point-label {
+    color: var(--slide-gradient-end);
+    font-size: 1.3rem;
+}
+
 /* --- Takeaway / Summary aside --- */
 .slide-presentation .slide-takeaway {
     margin-top: 2rem;
@@ -738,7 +832,7 @@
     .slide-presentation .layout-key-points .slide-blocks:has(> .block-item:nth-child(3)):not(:has(> .block-item:nth-child(4))),
     .slide-presentation .layout-comparison .slide-blocks,
     .slide-presentation .layout-code .slide-blocks,
-    .slide-presentation .layout-visual .slide-blocks {
+    .slide-presentation .layout-image-focus .slide-blocks {
         grid-template-columns: minmax(0, 1fr);
     }
     .slide-presentation .layout-concept .slide-composition {
@@ -754,7 +848,7 @@
         width: 36px;
     }
     .slide-presentation .layout-code .block-code:first-child,
-    .slide-presentation .layout-visual .block-image:first-child {
+    .slide-presentation .layout-image-focus .block-image:first-child {
         grid-column: auto;
         grid-row: auto;
     }

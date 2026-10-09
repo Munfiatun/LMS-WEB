@@ -19,6 +19,7 @@ class Slide extends Model
         'subtitle',
         'content',
         'summary',
+        'layout',
         'order',
         'source_reference',
         'needs_review',

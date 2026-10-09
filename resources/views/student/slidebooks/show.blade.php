@@ -43,7 +43,7 @@
     {{-- Slide Stage --}}
     <div class="presentation-stage flex-1" id="presentationContainer">
         @forelse($slides as $slide)
-            @php($presentation = $presenter->present($slide->title, $slide->content))
+            @php($presentation = $presenter->present($slide->title, $slide->content, $slide->layout))
             <article class="presentation-slide layout-{{ $presentation['layout'] }}"
                      data-layout="{{ $presentation['layout'] }}"
                      data-slide-index="{{ $loop->index }}"
