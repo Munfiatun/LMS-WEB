@@ -266,7 +266,7 @@ function enhanceSlidebookThemePicker() {
                 <p class="mt-1 text-[11px] leading-relaxed text-slate-400">${theme.description}</p>
             </div>
             <span data-theme-active class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-white opacity-0 transition-opacity" aria-hidden="true">
-                <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-7.25 7.31a1 1 0 0 1-1.42 0l-3.75-3.78a1 1 0 1 1 1.42-1.408l3.04 3.064 6.54-6.594a1 1 0 0 1 1.414-.006Z" clip-rule="evenodd" /></svg>
+                <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-7.25 7.31a1 1 0 1 1 1.42-1.408l3.04 3.064 6.54-6.594a1 1 0 0 1 1.414-.006Z" clip-rule="evenodd" /></svg>
             </span>
         `;
 
@@ -286,8 +286,205 @@ function enhanceSlidebookThemePicker() {
     renderSelection();
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', enhanceSlidebookThemePicker, { once: true });
-} else {
+function enhanceSlideDeckAuthoring() {
+    const designForm = document.querySelector('form[action*="/slidebooks/"][action$="/design"]');
+    const deleteForms = Array.from(document.querySelectorAll('form[action*="/instructor/slides/"]'));
+
+    if (!designForm || deleteForms.length < 2 || document.querySelector('[data-slide-order-toolbar]')) {
+        return;
+    }
+
+    const parsedCards = deleteForms
+        .map((form) => {
+            const match = form.action.match(/\/instructor\/slides\/(\d+)$/);
+            const card = form.closest('div.rounded-xl.border');
+            return match && card ? { id: Number(match[1]), card } : null;
+        })
+        .filter(Boolean);
+
+    const uniqueCards = Array.from(new Map(parsedCards.map((item) => [item.id, item])).values());
+    if (uniqueCards.length < 2) {
+        return;
+    }
+
+    const deck = uniqueCards[0].card.parentElement;
+    if (!deck || !uniqueCards.every((item) => item.card.parentElement === deck)) {
+        return;
+    }
+
+    const designUrl = new URL(designForm.action, window.location.origin);
+    const reorderUrl = new URL(designUrl.toString());
+    reorderUrl.pathname = reorderUrl.pathname.replace(/\/design$/, '/slides/reorder');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    let initialIds = uniqueCards.map((item) => item.id);
+    let isDirty = false;
+    let draggedCard = null;
+
+    const toolbar = document.createElement('div');
+    toolbar.dataset.slideOrderToolbar = 'true';
+    toolbar.className = 'mb-4 flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 sm:flex-row sm:items-center sm:justify-between';
+    toolbar.innerHTML = `
+        <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-200">Urutan Slide</p>
+            <p class="mt-1 text-[11px] text-slate-500">Seret pegangan atau gunakan tombol naik/turun. Perubahan baru diterapkan setelah disimpan.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span data-order-state class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-300">Tersimpan</span>
+            <button type="button" data-save-order disabled class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50">Simpan Urutan</button>
+        </div>
+    `;
+    deck.parentElement?.insertBefore(toolbar, deck);
+
+    const stateBadge = toolbar.querySelector('[data-order-state]');
+    const saveButton = toolbar.querySelector('[data-save-order]');
+
+    const currentCards = () => Array.from(deck.children).filter((element) => element.dataset.slideId);
+    const currentIds = () => currentCards().map((card) => Number(card.dataset.slideId));
+
+    const updateVisualOrder = () => {
+        currentCards().forEach((card, index) => {
+            const badge = card.querySelector('[data-original-order-badge]');
+            if (badge) {
+                badge.textContent = String(index + 1);
+            }
+
+            const moveUp = card.querySelector('[data-move-slide="up"]');
+            const moveDown = card.querySelector('[data-move-slide="down"]');
+            if (moveUp) moveUp.disabled = index === 0;
+            if (moveDown) moveDown.disabled = index === currentCards().length - 1;
+        });
+
+        isDirty = JSON.stringify(currentIds()) !== JSON.stringify(initialIds);
+        if (stateBadge) {
+            stateBadge.textContent = isDirty ? 'Belum disimpan' : 'Tersimpan';
+            stateBadge.className = isDirty
+                ? 'rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-300'
+                : 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-300';
+        }
+        if (saveButton) {
+            saveButton.disabled = !isDirty;
+        }
+    };
+
+    const beforeUnloadHandler = (event) => {
+        if (!isDirty) return;
+        event.preventDefault();
+        event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+
+    uniqueCards.forEach(({ id, card }) => {
+        card.dataset.slideId = String(id);
+
+        const orderBadge = card.querySelector('.w-6.h-6');
+        if (orderBadge) {
+            orderBadge.dataset.originalOrderBadge = 'true';
+        }
+
+        const controls = document.createElement('div');
+        controls.className = 'mb-3 flex items-center justify-between gap-2 rounded-lg border border-slate-800/80 bg-slate-900/70 px-2.5 py-2';
+        controls.innerHTML = `
+            <button type="button" draggable="true" data-drag-handle class="flex cursor-grab items-center gap-2 rounded-md px-2 py-1 text-[11px] font-semibold text-slate-400 hover:bg-slate-800 hover:text-white active:cursor-grabbing" title="Seret untuk mengubah urutan">
+                <span aria-hidden="true">⠿</span>
+                <span>Geser slide</span>
+            </button>
+            <div class="flex items-center gap-1">
+                <button type="button" data-move-slide="up" class="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-30" aria-label="Pindahkan slide ke atas">↑</button>
+                <button type="button" data-move-slide="down" class="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-30" aria-label="Pindahkan slide ke bawah">↓</button>
+            </div>
+        `;
+        card.insertBefore(controls, card.firstChild);
+
+        const handle = controls.querySelector('[data-drag-handle]');
+        handle?.addEventListener('dragstart', (event) => {
+            draggedCard = card;
+            card.classList.add('opacity-60', 'ring-2', 'ring-indigo-500/40');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', String(id));
+        });
+        handle?.addEventListener('dragend', () => {
+            card.classList.remove('opacity-60', 'ring-2', 'ring-indigo-500/40');
+            draggedCard = null;
+            updateVisualOrder();
+        });
+
+        card.addEventListener('dragover', (event) => {
+            if (!draggedCard || draggedCard === card) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            const rect = card.getBoundingClientRect();
+            const placeAfter = event.clientY > rect.top + rect.height / 2;
+            deck.insertBefore(draggedCard, placeAfter ? card.nextSibling : card);
+        });
+
+        controls.querySelector('[data-move-slide="up"]')?.addEventListener('click', () => {
+            const previous = card.previousElementSibling;
+            if (previous?.dataset.slideId) {
+                deck.insertBefore(card, previous);
+                updateVisualOrder();
+            }
+        });
+
+        controls.querySelector('[data-move-slide="down"]')?.addEventListener('click', () => {
+            const next = card.nextElementSibling;
+            if (next?.dataset.slideId) {
+                deck.insertBefore(next, card);
+                updateVisualOrder();
+            }
+        });
+    });
+
+    saveButton?.addEventListener('click', async () => {
+        if (!isDirty || !csrfToken) return;
+
+        saveButton.disabled = true;
+        saveButton.textContent = 'Menyimpan…';
+        stateBadge.textContent = 'Menyimpan';
+
+        try {
+            const response = await fetch(reorderUrl.toString(), {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({ slide_ids: currentIds() }),
+            });
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                throw new Error(payload?.message || 'Urutan slide gagal disimpan.');
+            }
+
+            initialIds = currentIds();
+            isDirty = false;
+            window.removeEventListener('beforeunload', beforeUnloadHandler);
+            stateBadge.textContent = 'Tersimpan';
+            stateBadge.className = 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-300';
+            saveButton.textContent = 'Urutan Tersimpan';
+            setTimeout(() => window.location.reload(), 450);
+        } catch (error) {
+            stateBadge.textContent = 'Gagal menyimpan';
+            stateBadge.className = 'rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-rose-300';
+            saveButton.disabled = false;
+            saveButton.textContent = 'Coba Simpan Lagi';
+            window.alert(error.message);
+        }
+    });
+
+    updateVisualOrder();
+}
+
+function initializeSlidebookAuthoringEnhancements() {
     enhanceSlidebookThemePicker();
+    enhanceSlideDeckAuthoring();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeSlidebookAuthoringEnhancements, { once: true });
+} else {
+    initializeSlidebookAuthoringEnhancements();
 }
