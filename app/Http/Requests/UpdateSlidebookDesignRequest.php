@@ -2,23 +2,23 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateSlidebookDesignRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Only an authorized owner may change design on an editable revision.
      */
     public function authorize(): bool
     {
         $slidebook = $this->route('slidebook');
-        return $slidebook && in_array($slidebook->status, ['draft', 'review']);
+
+        return $slidebook
+            && in_array($slidebook->status, ['draft', 'review'], true)
+            && (bool) $this->user()?->can('update', $slidebook);
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
