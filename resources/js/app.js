@@ -91,6 +91,7 @@ function enhanceSlidebookThemePicker() {
 
     const form = select.closest('form');
     const fieldContainer = select.parentElement;
+    const studentPreviewLink = document.querySelector('a[href*="/slidebooks/"][href$="/preview"]');
     if (!form || !fieldContainer) {
         return;
     }
@@ -114,9 +115,68 @@ function enhanceSlidebookThemePicker() {
     const grid = document.createElement('div');
     grid.className = 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3';
 
+    const livePreview = document.createElement('section');
+    livePreview.className = 'rounded-2xl border border-slate-800 bg-slate-950/50 p-4';
+    livePreview.innerHTML = `
+        <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-300">Live Design Preview</p>
+                <p class="mt-1 text-xs text-slate-500">Pratinjau ini sementara. Tema belum diterapkan ke data sampai tombol Simpan Desain ditekan.</p>
+            </div>
+            <span data-preview-theme class="inline-flex w-fit rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-indigo-300"></span>
+        </div>
+        <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner">
+            <div class="aspect-video min-h-[280px] w-full">
+                <iframe data-theme-live-preview class="h-full min-h-[280px] w-full border-0 bg-slate-950" title="Live preview desain Slidebook" loading="lazy" sandbox="allow-scripts allow-same-origin"></iframe>
+            </div>
+        </div>
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+            <span>Gunakan preview penuh untuk mengecek semua 18 slide.</span>
+            <a data-open-full-preview target="_blank" rel="noopener" class="font-semibold text-indigo-300 hover:text-indigo-200">Buka Preview Penuh ↗</a>
+        </div>
+    `;
+
     const stateBadge = intro.querySelector('[data-theme-state]');
+    const previewThemeBadge = livePreview.querySelector('[data-preview-theme]');
+    const previewFrame = livePreview.querySelector('[data-theme-live-preview]');
+    const fullPreviewLink = livePreview.querySelector('[data-open-full-preview]');
     const cards = new Map();
     const initialValue = select.value;
+
+    const previewUrlFor = (preset) => {
+        if (!studentPreviewLink) {
+            return null;
+        }
+
+        const url = new URL(studentPreviewLink.href, window.location.origin);
+        url.searchParams.set('preset', preset);
+        url.searchParams.set('embedded', '1');
+        url.searchParams.set('_preview', Date.now().toString());
+        return url;
+    };
+
+    const refreshLivePreview = () => {
+        const theme = slidebookThemes.find((item) => item.value === select.value);
+        if (previewThemeBadge) {
+            previewThemeBadge.textContent = theme?.label ?? select.value;
+        }
+
+        const previewUrl = previewUrlFor(select.value);
+        if (!previewUrl) {
+            livePreview.classList.add('hidden');
+            return;
+        }
+
+        livePreview.classList.remove('hidden');
+        if (previewFrame) {
+            previewFrame.src = previewUrl.toString();
+        }
+        if (fullPreviewLink) {
+            const fullUrl = new URL(previewUrl.toString());
+            fullUrl.searchParams.delete('embedded');
+            fullPreviewLink.href = fullUrl.toString();
+        }
+    };
 
     const renderSelection = () => {
         cards.forEach((button, value) => {
@@ -140,6 +200,8 @@ function enhanceSlidebookThemePicker() {
                 ? 'inline-flex w-fit items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-300'
                 : 'inline-flex w-fit items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-300';
         }
+
+        refreshLivePreview();
     };
 
     slidebookThemes.forEach((theme) => {
@@ -172,7 +234,7 @@ function enhanceSlidebookThemePicker() {
         grid.appendChild(button);
     });
 
-    panel.append(intro, grid);
+    panel.append(intro, grid, livePreview);
     fieldContainer.insertBefore(panel, select);
     renderSelection();
 }
