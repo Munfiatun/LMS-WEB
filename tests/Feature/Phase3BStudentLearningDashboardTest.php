@@ -126,4 +126,68 @@ class Phase3BStudentLearningDashboardTest extends TestCase
         $this->assertSame(100.0, $summary['stats']['average_score']);
         $this->assertSame(1, $summary['stats']['passed_quizzes']);
     }
+
+    public function test_enrolled_student_can_view_course_progress_detail(): void
+    {
+        $this->seedDemo();
+
+        $student = User::where('email', 'student@example.com')->firstOrFail();
+        $course = Course::where('slug', 'lms-feature-showcase')->firstOrFail();
+
+        $this->actingAs($student)
+            ->get(route('student.courses.progress', $course))
+            ->assertOk()
+            ->assertSee('Learning Progress')
+            ->assertSee('Rekomendasi Belajar')
+            ->assertSee('Web Request Lifecycle')
+            ->assertSee('Web Fundamentals Quiz')
+            ->assertSee('Buka Materi Berikutnya');
+    }
+
+    public function test_course_progress_detail_metrics_are_course_scoped(): void
+    {
+        $this->seedDemo();
+
+        $student = User::where('email', 'student@example.com')->firstOrFail();
+        $course = Course::where('slug', 'lms-feature-showcase')->firstOrFail();
+        $detail = app(StudentLearningDashboardService::class)->courseDetail($student, $course);
+
+        $this->assertSame(1, $detail['completedMaterials']);
+        $this->assertSame(2, $detail['totalMaterials']);
+        $this->assertSame(1, $detail['passedQuizzes']);
+        $this->assertSame(1, $detail['totalQuizzes']);
+        $this->assertSame(1, $detail['submittedAttempts']);
+        $this->assertSame(100.0, $detail['averageQuizScore']);
+        $this->assertSame('Web Request Lifecycle', $detail['nextMaterial']->title);
+        $this->assertSame('material', $detail['recommendationType']);
+    }
+
+    public function test_non_enrolled_student_cannot_view_course_progress_detail(): void
+    {
+        $this->seedDemo();
+
+        $course = Course::where('slug', 'lms-feature-showcase')->firstOrFail();
+        $studentRole = Role::where('name', Role::ROLE_STUDENT)->firstOrFail();
+        $otherStudent = User::factory()->create([
+            'role_id' => $studentRole->id,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($otherStudent)
+            ->get(route('student.courses.progress', $course))
+            ->assertNotFound();
+    }
+
+    public function test_archived_course_progress_detail_is_not_available_to_student(): void
+    {
+        $this->seedDemo();
+
+        $student = User::where('email', 'student@example.com')->firstOrFail();
+        $course = Course::where('slug', 'lms-feature-showcase')->firstOrFail();
+        $course->update(['status' => Course::STATUS_ARCHIVED]);
+
+        $this->actingAs($student)
+            ->get(route('student.courses.progress', $course))
+            ->assertNotFound();
+    }
 }
