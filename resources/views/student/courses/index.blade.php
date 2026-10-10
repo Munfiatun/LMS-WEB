@@ -46,10 +46,9 @@
                                     {{ $course->category?->name ?? 'Uncategorized' }}
                                 </span>
                             </div>
-                            <h4 class="text-xl font-extrabold text-white mb-1"><a href="{{ route('courses.show', $course->slug) }}" class="hover:text-indigo-300 transition-colors">{{ $course->title }}</a></h4>
+                            <h4 class="text-xl font-extrabold text-white mb-1"><a href="{{ route('student.courses.progress', $course) }}" class="hover:text-indigo-300 transition-colors">{{ $course->title }}</a></h4>
                             <p class="text-xs text-slate-400 mb-4 line-clamp-1">Pengajar: {{ $course->instructor->name }}</p>
-                            
-                            <!-- Progress Bar -->
+
                             @if($enrollment)
                                 <div class="w-full max-w-md">
                                     <div class="flex justify-between items-end text-[11px] font-semibold text-slate-400 mb-1.5">
@@ -64,16 +63,19 @@
                                 </div>
                             @endif
                         </div>
-                        <div class="flex-shrink-0 flex gap-3">
-                            <a href="{{ route('student.courses.continue', $course) }}" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2">
-                                Buka Kelas
+                        <div class="flex-shrink-0 flex flex-wrap gap-2">
+                            <a href="{{ route('student.courses.progress', $course) }}" class="px-4 py-2.5 border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 text-sm font-bold rounded-xl transition-colors">
+                                Detail Progres
+                            </a>
+                            <a href="{{ route('student.courses.continue', $course) }}" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2">
+                                Lanjutkan
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                             </a>
                         </div>
                     </div>
                 @endforeach
             </div>
-            
+
             <div class="mt-6">
                 {{ $courses->links() }}
             </div>

@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Services\StudentLearningDashboardService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CourseController extends Controller
 {
+    public function __construct(private StudentLearningDashboardService $learningDashboard) {}
+
     public function index(Request $request): View
     {
         $enrolledCourseIds = CourseEnrollment::where('student_id', $request->user()->id)
@@ -53,5 +56,12 @@ class CourseController extends Controller
             ->toArray();
 
         return view('student.courses.explore', compact('courses', 'enrolledCourseIds'));
+    }
+
+    public function progress(Request $request, Course $course): View
+    {
+        $detail = $this->learningDashboard->courseDetail($request->user(), $course);
+
+        return view('student.courses.progress', $detail);
     }
 }

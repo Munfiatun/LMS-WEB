@@ -167,6 +167,7 @@ Route::middleware(['auth', 'role:student'])
         // Course Discovery & Lists
         Route::get('/courses', [StudentCourseController::class, 'index'])->name('courses.index');
         Route::get('/courses/explore', [StudentCourseController::class, 'explore'])->name('courses.explore');
+        Route::get('/courses/{course}/progress', [StudentCourseController::class, 'progress'])->name('courses.progress');
 
         // Enrollment & Progress
         Route::post('/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('courses.enroll');
