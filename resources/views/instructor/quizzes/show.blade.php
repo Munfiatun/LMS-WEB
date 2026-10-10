@@ -73,7 +73,37 @@
 
         @if($quiz->status === 'draft')
             <div class="p-6 bg-white dark:bg-gray-800 rounded-xl space-y-4">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Review Quiz</h3>
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-500 dark:text-indigo-300">Assessment Quality Gate</p>
+                        <h3 class="mt-1 text-lg font-bold text-gray-900 dark:text-white">Review Quiz</h3>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">AI membantu menyusun draft, keputusan akhir tetap pada guru.</p>
+                </div>
+
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div class="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Perlu Review</p>
+                        <p class="mt-1 text-2xl font-bold {{ $reviewStats['pending'] > 0 ? 'text-amber-500' : 'text-emerald-500' }}">{{ $reviewStats['pending'] }}</p>
+                        <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{{ $reviewStats['pending'] }} perlu review guru</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Terverifikasi</p>
+                        <p class="mt-1 text-2xl font-bold text-emerald-500">{{ $reviewStats['verified'] }}</p>
+                        <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">Dapat masuk quality gate publikasi</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">AI Inferred</p>
+                        <p class="mt-1 text-2xl font-bold text-amber-500">{{ $reviewStats['inferred'] }}</p>
+                        <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">Kunci ditentukan dari inferensi materi</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Sumber Terverifikasi</p>
+                        <p class="mt-1 text-2xl font-bold text-indigo-500">{{ $reviewStats['explicit'] + $reviewStats['manual'] }}</p>
+                        <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{{ $reviewStats['explicit'] }} eksplisit · {{ $reviewStats['manual'] }} manual</p>
+                    </div>
+                </div>
+
                 <p class="text-sm text-gray-500 dark:text-gray-400">Periksa dan simpan setiap soal untuk memverifikasi jawabannya. Gunakan Builder untuk menghapus atau memilih soal, lalu Terbitkan Kuis setelah selesai.</p>
                 @foreach($quiz->quizQuestions->pluck('question.questionBank')->unique('id') as $bank)
                     <a href="{{ route('instructor.question-banks.show', $bank) }}" class="block text-indigo-500">Tambah soal manual ke {{ $bank->title }}, lalu pilih melalui Builder</a>
