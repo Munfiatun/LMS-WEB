@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Course;
 use App\Models\LearningMaterial;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
@@ -111,6 +112,104 @@ class StudentLearningDashboardService
                 'submitted_attempts' => $allAttempts->count(),
                 'average_score' => $this->averagePercentage($allAttempts),
             ],
+        ];
+    }
+
+    /**
+     * Build a course-scoped progress detail for one enrolled student.
+     *
+     * @return array<string, mixed>
+     */
+    public function courseDetail(User $student, Course $course): array
+    {
+        $enrollment = $student->courseEnrollments()
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['active', 'completed'])
+            ->whereHas('course', fn ($query) => $query->published())
+            ->firstOrFail();
+
+        $course->loadMissing(['category', 'instructor']);
+
+        $materials = $course->materials()
+            ->published()
+            ->with(['section', 'progress' => fn ($query) => $query->where('student_id', $student->id)])
+            ->get()
+            ->sortBy(fn (LearningMaterial $material) => sprintf(
+                '%08d-%08d',
+                $material->section?->order ?? 0,
+                $material->order ?? 0
+            ))
+            ->values();
+
+        $materialRows = $materials->map(function (LearningMaterial $material): array {
+            $progress = $material->progress->first();
+
+            return [
+                'material' => $material,
+                'completed' => $progress?->status === 'completed',
+                'completed_at' => $progress?->completed_at,
+            ];
+        })->values();
+
+        $quizzes = $course->quizzes()
+            ->available()
+            ->with(['attempts' => fn ($query) => $query
+                ->where('student_id', $student->id)
+                ->where('status', 'submitted')
+                ->latest('submitted_at')])
+            ->orderBy('id')
+            ->get();
+
+        $quizRows = $quizzes->map(function (Quiz $quiz): array {
+            $attempts = $quiz->attempts;
+            $latest = $attempts->first();
+            $bestScore = $attempts->whereNotNull('percentage')->max('percentage');
+            $bestScore = $bestScore === null ? null : (float) $bestScore;
+
+            return [
+                'quiz' => $quiz,
+                'attempts' => $attempts->count(),
+                'best_score' => $bestScore,
+                'latest_score' => $latest?->percentage === null ? null : (float) $latest->percentage,
+                'latest_submitted_at' => $latest?->submitted_at,
+                'passed' => $bestScore !== null && $bestScore >= (float) $quiz->passing_score,
+            ];
+        })->values();
+
+        $submittedAttempts = $quizzes
+            ->flatMap(function (Quiz $quiz) {
+                return $quiz->attempts->each(fn (QuizAttempt $attempt) => $attempt->setRelation('quiz', $quiz));
+            })
+            ->values();
+
+        $nextMaterialRow = $materialRows->first(fn (array $row) => ! $row['completed']);
+        $nextQuizRow = $quizRows->first(fn (array $row) => ! $row['passed']);
+        $nextMaterial = $nextMaterialRow['material'] ?? null;
+        $nextQuiz = $nextQuizRow['quiz'] ?? null;
+
+        [$recommendation, $recommendationType] = $this->recommendationFor(
+            (float) $enrollment->progress_percentage,
+            $nextMaterial,
+            $nextQuiz,
+            $submittedAttempts
+        );
+
+        return [
+            'student' => $student,
+            'course' => $course,
+            'enrollment' => $enrollment,
+            'materialRows' => $materialRows,
+            'quizRows' => $quizRows,
+            'completedMaterials' => $materialRows->where('completed', true)->count(),
+            'totalMaterials' => $materialRows->count(),
+            'passedQuizzes' => $quizRows->where('passed', true)->count(),
+            'totalQuizzes' => $quizRows->count(),
+            'submittedAttempts' => $submittedAttempts->count(),
+            'averageQuizScore' => $this->averagePercentage($submittedAttempts),
+            'nextMaterial' => $nextMaterial,
+            'nextQuiz' => $nextQuiz,
+            'recommendation' => $recommendation,
+            'recommendationType' => $recommendationType,
         ];
     }
 
