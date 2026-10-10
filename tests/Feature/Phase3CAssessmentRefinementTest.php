@@ -27,13 +27,23 @@ class Phase3CAssessmentRefinementTest extends TestCase
         $bank = QuestionBank::factory()->create(['instructor_id' => $teacher->id]);
         $questions = $this->validExtractedQuestions();
 
-        match ($case) {
-            'missing review flag' => unset($questions[0]['needs_review']),
-            'inferred without review' => $questions[1]['needs_review'] = false,
-            'multiple correct answers' => $questions[0]['options'][1]['is_correct'] = true,
-            'duplicate options' => $questions[0]['options'][1]['option_text'] = $questions[0]['options'][0]['option_text'],
-            'manual source from ai' => $questions[0]['answer_source'] = Question::SOURCE_MANUAL,
-        };
+        switch ($case) {
+            case 'missing review flag':
+                unset($questions[0]['needs_review']);
+                break;
+            case 'inferred without review':
+                $questions[1]['needs_review'] = false;
+                break;
+            case 'multiple correct answers':
+                $questions[0]['options'][1]['is_correct'] = true;
+                break;
+            case 'duplicate options':
+                $questions[0]['options'][1]['option_text'] = $questions[0]['options'][0]['option_text'];
+                break;
+            case 'manual source from ai':
+                $questions[0]['answer_source'] = Question::SOURCE_MANUAL;
+                break;
+        }
 
         $service = new AIQuestionService($this->aiReturning($questions));
 
