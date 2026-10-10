@@ -37,6 +37,8 @@ class Phase3AInstructorAnalyticsTest extends TestCase
             ->get(route('instructor.courses.analytics', $course))
             ->assertOk()
             ->assertSee('Laporan Analitik Kursus')
+            ->assertSee('Ringkasan Intervensi')
+            ->assertSee('Prioritas Tindak Lanjut')
             ->assertSee('Performa Quiz')
             ->assertSee('Rata-Rata Nilai Quiz')
             ->assertSee('Pass Rate Quiz')
@@ -81,6 +83,27 @@ class Phase3AInstructorAnalyticsTest extends TestCase
         $this->assertSame('Web Fundamentals Quiz', $stats['quizPerformance'][0]['title']);
         $this->assertSame(100.0, $stats['quizPerformance'][0]['average_score']);
         $this->assertSame(100.0, $stats['quizPerformance'][0]['pass_rate']);
+    }
+
+    public function test_course_intervention_summary_matches_student_detail_rules(): void
+    {
+        $this->seedDemo();
+
+        $course = Course::where('slug', 'lms-feature-showcase')->firstOrFail();
+        $stats = app(CourseAnalyticsService::class)->summarize($course);
+
+        $this->assertSame([
+            'high' => 0,
+            'medium' => 1,
+            'low' => 0,
+            'stable' => 0,
+        ], $stats['interventionCounts']);
+
+        $this->assertCount(1, $stats['priorityStudents']);
+        $this->assertSame('medium', $stats['priorityStudents'][0]['intervention_level']);
+        $this->assertSame('Ruby', $stats['priorityStudents'][0]['enrollment']->student->name);
+        $this->assertSame(1, $stats['priorityStudents'][0]['completed_materials']);
+        $this->assertSame(1, $stats['priorityStudents'][0]['passed_quizzes']);
     }
 
     public function test_course_owner_can_view_enrolled_student_performance_detail(): void
