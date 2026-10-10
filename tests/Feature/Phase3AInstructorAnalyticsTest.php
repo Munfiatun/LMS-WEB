@@ -40,7 +40,8 @@ class Phase3AInstructorAnalyticsTest extends TestCase
             ->assertSee('Performa Quiz')
             ->assertSee('Rata-Rata Nilai Quiz')
             ->assertSee('Pass Rate Quiz')
-            ->assertSee('Perlu Perhatian');
+            ->assertSee('Perlu Perhatian')
+            ->assertSee('Lihat Detail');
     }
 
     public function test_other_instructor_cannot_view_private_course_analytics(): void
@@ -80,5 +81,58 @@ class Phase3AInstructorAnalyticsTest extends TestCase
         $this->assertSame('Web Fundamentals Quiz', $stats['quizPerformance'][0]['title']);
         $this->assertSame(100.0, $stats['quizPerformance'][0]['average_score']);
         $this->assertSame(100.0, $stats['quizPerformance'][0]['pass_rate']);
+    }
+
+    public function test_course_owner_can_view_enrolled_student_performance_detail(): void
+    {
+        $this->seedDemo();
+
+        $instructor = User::where('email', 'instructor@example.com')->firstOrFail();
+        $student = User::where('email', 'student@example.com')->firstOrFail();
+        $course = Course::where('slug', 'lms-feature-showcase')->firstOrFail();
+
+        $this->actingAs($instructor)
+            ->get(route('instructor.courses.analytics.student', [$course, $student]))
+            ->assertOk()
+            ->assertSee('Student Performance Detail')
+            ->assertSee($student->name)
+            ->assertSee('Rekomendasi Tindak Lanjut')
+            ->assertSee('Slidebook Layout Gallery')
+            ->assertSee('Web Fundamentals Quiz');
+    }
+
+    public function test_student_detail_metrics_are_scoped_to_selected_course(): void
+    {
+        $this->seedDemo();
+
+        $student = User::where('email', 'student@example.com')->firstOrFail();
+        $course = Course::where('slug', 'lms-feature-showcase')->firstOrFail();
+        $detail = app(CourseAnalyticsService::class)->studentDetail($course, $student);
+
+        $this->assertSame($student->id, $detail['student']->id);
+        $this->assertSame(1, $detail['completedMaterials']);
+        $this->assertSame(2, $detail['totalMaterials']);
+        $this->assertSame(1, $detail['passedQuizzes']);
+        $this->assertSame(1, $detail['totalQuizzes']);
+        $this->assertSame(1, $detail['submittedAttempts']);
+        $this->assertSame(100.0, $detail['averageQuizScore']);
+        $this->assertSame('medium', $detail['interventionLevel']);
+    }
+
+    public function test_non_enrolled_student_cannot_be_opened_from_course_analytics(): void
+    {
+        $this->seedDemo();
+
+        $instructor = User::where('email', 'instructor@example.com')->firstOrFail();
+        $course = Course::where('slug', 'lms-feature-showcase')->firstOrFail();
+        $studentRole = Role::where('name', Role::ROLE_STUDENT)->firstOrFail();
+        $otherStudent = User::factory()->create([
+            'role_id' => $studentRole->id,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($instructor)
+            ->get(route('instructor.courses.analytics.student', [$course, $otherStudent]))
+            ->assertNotFound();
     }
 }
