@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Instructor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\User;
 use App\Services\CourseAnalyticsService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -27,6 +28,16 @@ class AnalyticsController extends Controller
             'course' => $course,
             'enrollments' => $enrollments,
             ...$analytics,
+        ]);
+    }
+
+    public function student(Course $course, User $student): View
+    {
+        Gate::authorize('update', $course);
+
+        return view('instructor.analytics.student', [
+            'course' => $course,
+            ...$this->analytics->studentDetail($course, $student),
         ]);
     }
 }
