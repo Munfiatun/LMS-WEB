@@ -91,11 +91,11 @@ class QuestionController extends Controller
                 'difficulty' => $validated['difficulty'],
                 'points' => (int) $validated['points'],
                 'explanation' => $validated['explanation'] ?? null,
-                'needs_review' => false, // Review verified on manual edit
+                'needs_review' => false,
+                'answer_source' => Question::SOURCE_MANUAL,
                 'status' => Question::STATUS_APPROVED,
             ]);
 
-            // Replace options
             $question->options()->delete();
 
             $correctIndex = (int) $validated['correct_option'];
@@ -124,7 +124,6 @@ class QuestionController extends Controller
         $order = $question->order;
         $question->delete();
 
-        // Re-order remaining questions
         $bank->questions()->where('order', '>', $order)->decrement('order');
 
         return back()->with('success', 'Soal berhasil dihapus.');
