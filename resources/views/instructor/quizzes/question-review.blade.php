@@ -1,6 +1,27 @@
+@php
+    $sourceLabel = match ($question->answer_source) {
+        \App\Models\Question::SOURCE_EXPLICIT => 'Kunci eksplisit dari sumber',
+        \App\Models\Question::SOURCE_MANUAL => 'Kunci ditetapkan guru',
+        default => $question->needs_review ? 'Kunci hasil inferensi AI' : 'Inferensi AI diverifikasi guru',
+    };
+    $sourceClass = match ($question->answer_source) {
+        \App\Models\Question::SOURCE_EXPLICIT => 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
+        \App\Models\Question::SOURCE_MANUAL => 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20',
+        default => $question->needs_review
+            ? 'bg-amber-500/10 text-amber-300 border-amber-500/20'
+            : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20',
+    };
+@endphp
+
 <details class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100" @if($question->needs_review) open @endif>
     <summary class="cursor-pointer font-medium">{{ $question->question_text }} — {{ $question->needs_review ? 'AI Generated Draft' : 'Terverifikasi' }}</summary>
-    <p class="text-sm text-gray-500 mt-2">{{ $question->topic }} · {{ $question->difficulty }}</p>
+    <div class="mt-2 flex flex-wrap items-center gap-2">
+        <span class="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide {{ $sourceClass }}">{{ $sourceLabel }}</span>
+        <span class="text-xs text-gray-500 dark:text-gray-400">{{ $question->topic }} · {{ $question->difficulty }}</span>
+    </div>
+    @if($question->answer_source === \App\Models\Question::SOURCE_INFERRED && $question->needs_review)
+        <p class="mt-2 text-xs text-amber-500 dark:text-amber-300">Jawaban benar dipilih AI berdasarkan materi dan belum dianggap valid sampai guru memverifikasinya.</p>
+    @endif
     <form action="{{ route('instructor.questions.update', $question) }}" method="POST" class="space-y-3 mt-4">
         @csrf
         @method('PUT')
