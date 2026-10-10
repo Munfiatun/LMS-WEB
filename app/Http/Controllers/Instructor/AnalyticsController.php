@@ -13,7 +13,8 @@ class AnalyticsController extends Controller
 
     public function show(Course $course): View
     {
-        $this->authorize('view', $course);
+        // Analytics is instructor-private data; published visibility must not grant access.
+        $this->authorize('update', $course);
 
         $analytics = $this->analytics->summarize($course);
         $enrollments = $course->enrollments()
