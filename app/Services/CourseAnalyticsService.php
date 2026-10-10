@@ -59,24 +59,75 @@ class CourseAnalyticsService
             ];
         })->values();
 
-        $studentProgress = $enrollments->map(function ($enrollment) use ($submittedAttempts): array {
+        $studentIds = $enrollments->pluck('student_id')->all();
+        $materials = $course->materials()
+            ->published()
+            ->with(['progress' => fn ($query) => $query->whereIn('student_id', $studentIds)])
+            ->get();
+
+        $studentProgress = $enrollments->map(function ($enrollment) use ($submittedAttempts, $quizzes, $materials): array {
             $studentAttempts = $submittedAttempts->where('student_id', $enrollment->student_id);
+            $averageQuizScore = $this->averagePercentage($studentAttempts);
+
+            $completedMaterials = $materials->filter(function ($material) use ($enrollment): bool {
+                return $material->progress->contains(
+                    fn ($progress) => (int) $progress->student_id === (int) $enrollment->student_id
+                        && $progress->status === 'completed'
+                );
+            })->count();
+
+            $passedQuizzes = $quizzes->filter(function ($quiz) use ($enrollment): bool {
+                return $quiz->attempts
+                    ->where('student_id', $enrollment->student_id)
+                    ->contains(fn (QuizAttempt $attempt) => $attempt->percentage !== null
+                        && $attempt->percentage >= $quiz->passing_score);
+            })->count();
+
+            [$interventionLevel, $interventionMessage] = $this->interventionFor(
+                (float) $enrollment->progress_percentage,
+                $averageQuizScore,
+                $studentAttempts->count(),
+                $completedMaterials,
+                $materials->count(),
+                $passedQuizzes,
+                $quizzes->count(),
+                $enrollment->status
+            );
 
             return [
                 'enrollment' => $enrollment,
                 'attempts' => $studentAttempts->count(),
-                'average_quiz_score' => $this->averagePercentage($studentAttempts),
+                'average_quiz_score' => $averageQuizScore,
+                'completed_materials' => $completedMaterials,
+                'passed_quizzes' => $passedQuizzes,
+                'intervention_level' => $interventionLevel,
+                'intervention_message' => $interventionMessage,
             ];
         });
+
+        $interventionCounts = [
+            'high' => $studentProgress->where('intervention_level', 'high')->count(),
+            'medium' => $studentProgress->where('intervention_level', 'medium')->count(),
+            'low' => $studentProgress->where('intervention_level', 'low')->count(),
+            'stable' => $studentProgress->where('intervention_level', 'stable')->count(),
+        ];
+
+        $severityOrder = ['high' => 0, 'medium' => 1, 'low' => 2, 'stable' => 3];
+        $priorityStudents = $studentProgress
+            ->sortBy(fn (array $row) => sprintf(
+                '%d-%06.2f-%010d',
+                $severityOrder[$row['intervention_level']] ?? 9,
+                (float) $row['enrollment']->progress_percentage,
+                (int) $row['enrollment']->student_id
+            ))
+            ->take(5)
+            ->values();
 
         return [
             'totalStudents' => $enrollments->count(),
             'completedStudents' => $enrollments->where('status', 'completed')->count(),
             'averageProgress' => round((float) ($enrollments->avg('progress_percentage') ?? 0), 1),
-            'atRiskStudents' => $enrollments
-                ->where('status', 'active')
-                ->filter(fn ($enrollment) => (float) $enrollment->progress_percentage < 50)
-                ->count(),
+            'atRiskStudents' => $studentProgress->where('intervention_level', 'high')->count(),
             'totalQuizzes' => $quizzes->count(),
             'submittedAttempts' => $submittedAttempts->count(),
             'quizParticipants' => $submittedAttempts->pluck('student_id')->unique()->count(),
@@ -84,6 +135,8 @@ class CourseAnalyticsService
             'quizPassRate' => $this->percentage($passedAttempts->count(), $submittedAttempts->count()),
             'quizPerformance' => $quizPerformance,
             'studentProgress' => $studentProgress,
+            'interventionCounts' => $interventionCounts,
+            'priorityStudents' => $priorityStudents,
         ];
     }
 
