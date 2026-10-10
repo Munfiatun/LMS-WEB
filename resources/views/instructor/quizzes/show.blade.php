@@ -115,7 +115,7 @@
                         <span class="h-2 w-2 rounded-full {{ $reviewStats['pending'] > 0 ? 'bg-amber-400' : 'bg-emerald-400' }}"></span>
                     </div>
                     <p class="mt-3 text-3xl font-extrabold {{ $reviewStats['pending'] > 0 ? 'text-amber-300' : 'text-emerald-300' }}">{{ $reviewStats['pending'] }}</p>
-                    <p class="mt-1 text-[11px] text-slate-500">Menunggu keputusan guru</p>
+                    <p class="mt-1 text-[11px] text-slate-500">{{ $reviewStats['pending'] }} perlu review guru</p>
                 </div>
                 <div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
                     <p class="text-xs font-semibold text-slate-400">Terverifikasi</p>
