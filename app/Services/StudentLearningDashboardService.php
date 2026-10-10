@@ -24,7 +24,9 @@ class StudentLearningDashboardService
             ->orderByDesc('updated_at')
             ->get();
 
-        $courseRows = $enrollments->map(function ($enrollment) use ($student): array {
+        $allAttempts = collect();
+
+        $courseRows = $enrollments->map(function ($enrollment) use ($student, &$allAttempts): array {
             $course = $enrollment->course;
 
             $materials = $course->materials()
@@ -60,6 +62,8 @@ class StudentLearningDashboardService
                 })
                 ->values();
 
+            $allAttempts = $allAttempts->merge($submittedAttempts);
+
             $passedQuizIds = $submittedAttempts
                 ->filter(fn (QuizAttempt $attempt) => $attempt->percentage !== null
                     && $attempt->percentage >= (float) $attempt->quiz->passing_score)
@@ -91,16 +95,7 @@ class StudentLearningDashboardService
             ];
         })->values();
 
-        $allAttempts = $courseRows
-            ->flatMap(function (array $row) use ($student) {
-                return QuizAttempt::query()
-                    ->where('student_id', $student->id)
-                    ->where('status', 'submitted')
-                    ->whereHas('quiz', fn ($query) => $query->where('course_id', $row['course']->id))
-                    ->get();
-            })
-            ->unique('id')
-            ->values();
+        $allAttempts = $allAttempts->unique('id')->values();
 
         return [
             'enrollments' => $enrollments,
