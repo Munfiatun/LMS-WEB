@@ -83,6 +83,7 @@ Route::middleware(['auth', 'role:instructor'])
         Route::post('/courses/{course}/archive', [InstructorCourseController::class, 'archive'])->name('courses.archive');
         Route::post('/courses/{course}/publish', [InstructorCourseController::class, 'publish'])->name('courses.publish');
         Route::get('/courses/{course}/analytics', [AnalyticsController::class, 'show'])->name('courses.analytics');
+        Route::get('/courses/{course}/analytics/students/{student}', [AnalyticsController::class, 'student'])->name('courses.analytics.student');
         Route::post('/courses/{course}/enrollment-code/regenerate', [InstructorCourseController::class, 'regenerateEnrollmentCode'])->name('courses.regenerate-code');
 
         // Sections
