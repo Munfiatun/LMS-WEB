@@ -102,7 +102,7 @@ SYSTEM;
             }
         }
 
-        return DB::transaction(function () use ($slidebook, $teacher, $settings, $questions, $teacherPrompt): Quiz {
+        return DB::transaction(function () use ($slidebook, $teacher, $settings, $questions, $teacherPrompt, $slides): Quiz {
             $course = $slidebook->material->section->course;
             $bank = QuestionBank::create([
                 'instructor_id' => $teacher->id,
@@ -120,11 +120,14 @@ SYSTEM;
                 'published_at' => null,
             ]);
             foreach ($questions as $index => $data) {
+                $sourceSlideNumber = (int) $data['source_slide_number'];
                 $question = $bank->questions()->create([
                     'question_text' => trim($data['question_text']),
                     'type' => $settings['type'],
                     'difficulty' => $data['difficulty'],
-                    'topic' => 'Source: Slide '.$data['source_slide_number'],
+                    'topic' => 'Source: Slide '.$sourceSlideNumber,
+                    'source_slide_number' => $sourceSlideNumber,
+                    'source_excerpt' => $this->sourceExcerpt($slides, $sourceSlideNumber),
                     'explanation' => trim($data['explanation']),
                     'points' => 10,
                     'order' => $index + 1,
@@ -156,6 +159,23 @@ SYSTEM;
         $text = html_entity_decode(strip_tags(implode("\n", array_filter($parts, fn (?string $part): bool => filled($part)))), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         return trim(preg_replace(["/[ \t]+/u", "/\n{3,}/u"], [' ', "\n\n"], $text) ?? $text);
+    }
+
+    /**
+     * Keep an immutable, teacher-visible snapshot of the slide text that AI cited.
+     * This is derived by the application rather than trusted from model output.
+     *
+     * @param  list<array{number: int, text: string}>  $slides
+     */
+    private function sourceExcerpt(array $slides, int $slideNumber): string
+    {
+        foreach ($slides as $slide) {
+            if ((int) $slide['number'] === $slideNumber) {
+                return Str::limit(trim($slide['text']), 320, '…');
+            }
+        }
+
+        throw ValidationException::withMessages(['quiz' => 'Referensi sumber AI tidak ditemukan pada Slidebook.']);
     }
 
     /**
