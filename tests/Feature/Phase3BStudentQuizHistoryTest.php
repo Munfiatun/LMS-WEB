@@ -83,8 +83,17 @@ class Phase3BStudentQuizHistoryTest extends TestCase
 
         $response->assertOk()
             ->assertSee('1 attempt submitted')
-            ->assertSee('100.0%')
-            ->assertDontSee('0.0%');
+            ->assertSee('100.0%');
+
+        $stats = $response->viewData('stats');
+        $recentAttempts = $response->viewData('recentAttempts');
+
+        $this->assertSame(1, $stats['submitted_attempts']);
+        $this->assertSame(1, $stats['attempted_quizzes']);
+        $this->assertSame(1, $stats['passed_quizzes']);
+        $this->assertSame(100.0, $stats['average_score']);
+        $this->assertCount(1, $recentAttempts);
+        $this->assertSame($student->id, $recentAttempts->first()->student_id);
     }
 
     public function test_archived_course_quiz_is_removed_from_student_quiz_overview(): void
