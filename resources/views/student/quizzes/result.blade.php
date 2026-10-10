@@ -124,7 +124,7 @@
                                 </div>
                                 @if($revealSolutions)
                                     <div class="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] p-4">
-                                        <p class="text-[11px] font-bold uppercase tracking-wide text-emerald-400">Jawaban Benar</p>
+                                        <p class="text-[11px] font-bold uppercase tracking-wide text-emerald-400">Kunci Jawaban</p>
                                         <p class="mt-1 text-sm text-emerald-100">{{ $correct?->option_text ?? '-' }}</p>
                                     </div>
                                 @endif
