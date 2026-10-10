@@ -59,7 +59,85 @@
             <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Perlu Perhatian</span>
             <div class="mt-3 flex items-end justify-between gap-3">
                 <span class="text-3xl font-extrabold {{ $atRiskStudents > 0 ? 'text-rose-300' : 'text-white' }} tracking-tight">{{ $atRiskStudents }}</span>
-                <span class="text-xs {{ $atRiskStudents > 0 ? 'text-rose-400' : 'text-slate-500' }}">Progres &lt; 50%</span>
+                <span class="text-xs {{ $atRiskStudents > 0 ? 'text-rose-400' : 'text-slate-500' }}">Prioritas tinggi</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-300">Intervention Overview</p>
+                <h3 class="mt-2 text-lg font-bold text-white">Ringkasan Intervensi</h3>
+                <p class="mt-1 text-xs text-slate-500">Prioritas ditentukan dari progres, ketuntasan materi, dan hasil assessment. Ini alat bantu pemantauan, bukan diagnosis otomatis.</p>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 min-w-full xl:min-w-[520px] xl:max-w-2xl">
+                <div class="rounded-xl border border-rose-500/20 bg-rose-500/5 p-3">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-rose-300">Prioritas Tinggi</p>
+                    <p class="mt-2 text-2xl font-extrabold text-white">{{ $interventionCounts['high'] }}</p>
+                </div>
+                <div class="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-amber-300">Perlu Dipantau</p>
+                    <p class="mt-2 text-2xl font-extrabold text-white">{{ $interventionCounts['medium'] }}</p>
+                </div>
+                <div class="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-indigo-300">Pemantauan Rutin</p>
+                    <p class="mt-2 text-2xl font-extrabold text-white">{{ $interventionCounts['low'] }}</p>
+                </div>
+                <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Tuntas / Stabil</p>
+                    <p class="mt-2 text-2xl font-extrabold text-white">{{ $interventionCounts['stable'] }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-5 border-t border-slate-800 pt-5">
+            <div class="mb-3 flex items-center justify-between gap-3">
+                <div>
+                    <h4 class="text-sm font-bold text-white">Prioritas Tindak Lanjut</h4>
+                    <p class="mt-1 text-[11px] text-slate-500">Maksimal lima siswa ditampilkan berdasarkan tingkat intervensi dan progres terendah.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                @forelse($priorityStudents as $studentStat)
+                    @php
+                        $level = $studentStat['intervention_level'];
+                        $badgeClass = match ($level) {
+                            'high' => 'border-rose-500/30 bg-rose-500/10 text-rose-300',
+                            'medium' => 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+                            'stable' => 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+                            default => 'border-indigo-500/30 bg-indigo-500/10 text-indigo-300',
+                        };
+                        $levelLabel = match ($level) {
+                            'high' => 'Prioritas Tinggi',
+                            'medium' => 'Perlu Dipantau',
+                            'stable' => 'Tuntas / Stabil',
+                            default => 'Pemantauan Rutin',
+                        };
+                    @endphp
+                    <div class="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-bold text-white">{{ $studentStat['enrollment']->student->name }}</p>
+                                <p class="mt-1 text-[11px] text-slate-500">
+                                    Progres {{ number_format($studentStat['enrollment']->progress_percentage, 0) }}% &bull;
+                                    Rata-rata quiz {{ number_format($studentStat['average_quiz_score'], 1) }}%
+                                </p>
+                            </div>
+                            <span class="shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide {{ $badgeClass }}">{{ $levelLabel }}</span>
+                        </div>
+                        <p class="mt-3 text-xs leading-relaxed text-slate-400">{{ $studentStat['intervention_message'] }}</p>
+                        <div class="mt-3 text-right">
+                            <a href="{{ route('instructor.courses.analytics.student', [$course, $studentStat['enrollment']->student]) }}" class="text-xs font-bold text-indigo-300 hover:text-indigo-200">Buka Detail Siswa &rarr;</a>
+                        </div>
+                    </div>
+                @empty
+                    <div class="lg:col-span-2 rounded-xl border border-dashed border-slate-800 px-4 py-6 text-center text-sm text-slate-500">
+                        Belum ada data siswa untuk dirangkum.
+                    </div>
+                @endforelse
             </div>
         </div>
     </div>
