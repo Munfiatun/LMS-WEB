@@ -105,6 +105,26 @@ class QuizAttemptController extends Controller
         Gate::authorize('view', $attempt);
         abort_if($attempt->status === 'in_progress', 403);
 
-        return view('student.quizzes.result', compact('quiz', 'attempt'));
+        $attempt->load([
+            'attemptQuestions.question.options',
+            'answers.selectedOption',
+        ]);
+
+        $answerMap = $attempt->answers->keyBy('question_id');
+        $attemptsUsed = QuizAttempt::where('quiz_id', $quiz->id)
+            ->where('student_id', auth()->id())
+            ->count();
+        $remainingAttempts = max(0, (int) $quiz->max_attempts - $attemptsUsed);
+        $canRetry = ! $attempt->isPassed() && $remainingAttempts > 0;
+        $revealSolutions = $attempt->isPassed() || ! $canRetry;
+
+        return view('student.quizzes.result', compact(
+            'quiz',
+            'attempt',
+            'answerMap',
+            'remainingAttempts',
+            'canRetry',
+            'revealSolutions'
+        ));
     }
 }
