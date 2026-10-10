@@ -31,7 +31,7 @@ class Phase3CStudentAssessmentFeedbackTest extends TestCase
             ->assertSee('Tinjau kembali materi pada')
             ->assertSee('Slide 3')
             ->assertDontSee('Merkurius adalah jawaban yang benar.')
-            ->assertDontSee('Jawaban Benar');
+            ->assertDontSee('Kunci Jawaban');
     }
 
     public function test_final_failed_attempt_reveals_verified_solution_and_explanation(): void
@@ -43,7 +43,7 @@ class Phase3CStudentAssessmentFeedbackTest extends TestCase
         $this->actingAs($student)
             ->get(route('student.quizzes.result', [$quiz, $attempt]))
             ->assertOk()
-            ->assertSee('Jawaban Benar')
+            ->assertSee('Kunci Jawaban')
             ->assertSee('Merkurius')
             ->assertSee('Merkurius adalah jawaban yang benar.')
             ->assertDontSee('Coba Lagi Kuis Ini');
@@ -86,7 +86,7 @@ class Phase3CStudentAssessmentFeedbackTest extends TestCase
             'answer_source' => Question::SOURCE_MANUAL,
             'status' => Question::STATUS_APPROVED,
         ]);
-        $correct = $question->options()->create(['option_text' => 'Merkurius', 'is_correct' => true, 'order' => 1]);
+        $question->options()->create(['option_text' => 'Merkurius', 'is_correct' => true, 'order' => 1]);
         $wrong = $question->options()->create(['option_text' => 'Venus', 'is_correct' => false, 'order' => 2]);
         $question->options()->create(['option_text' => 'Bumi', 'is_correct' => false, 'order' => 3]);
         $question->options()->create(['option_text' => 'Mars', 'is_correct' => false, 'order' => 4]);
