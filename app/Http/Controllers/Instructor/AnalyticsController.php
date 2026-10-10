@@ -4,28 +4,27 @@ namespace App\Http\Controllers\Instructor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
-use Illuminate\Support\Facades\Cache;
+use App\Services\CourseAnalyticsService;
+use Illuminate\View\View;
 
 class AnalyticsController extends Controller
 {
-    public function show(Course $course)
+    public function __construct(private CourseAnalyticsService $analytics) {}
+
+    public function show(Course $course): View
     {
         $this->authorize('view', $course);
 
-        $enrollments = $course->enrollments()->with('student')->paginate(20);
+        $analytics = $this->analytics->summarize($course);
+        $enrollments = $course->enrollments()
+            ->with('student')
+            ->orderByDesc('created_at')
+            ->paginate(20);
 
-        $stats = Cache::remember('course_stats_'.$course->id, 300, function () use ($course) {
-            return [
-                'totalStudents' => $course->enrollments()->count(),
-                'completedStudents' => $course->enrollments()->where('status', 'completed')->count(),
-                'averageProgress' => $course->enrollments()->avg('progress_percentage') ?? 0,
-            ];
-        });
-
-        $totalStudents = $stats['totalStudents'];
-        $completedStudents = $stats['completedStudents'];
-        $averageProgress = $stats['averageProgress'];
-
-        return view('instructor.analytics.show', compact('course', 'enrollments', 'totalStudents', 'completedStudents', 'averageProgress'));
+        return view('instructor.analytics.show', [
+            'course' => $course,
+            'enrollments' => $enrollments,
+            ...$analytics,
+        ]);
     }
 }
