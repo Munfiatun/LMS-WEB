@@ -100,7 +100,7 @@
                             <td class="whitespace-nowrap px-6 py-4">
                                 <div class="flex items-center gap-2">
                                     <span class="text-lg font-extrabold {{ $attempt->isPassed() ? 'text-emerald-300' : 'text-rose-300' }}">{{ round($attempt->percentage, 2) }}%</span>
-                                    <span class="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide {{ $attempt->isPassed() ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/20 bg-rose-500/10 text-rose-300' }}">{{ $attempt->isPassed() ? 'Lulus' : 'Belum Lulus' }}</span>
+                                    <span class="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide {{ $attempt->isPassed() ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/20 bg-rose-500/10 text-rose-300' }}">{{ $attempt->isPassed() ? 'LULUS' : 'GAGAL' }}</span>
                                 </div>
                                 <p class="mt-1 text-xs text-slate-500">Skor: {{ $attempt->score }} poin</p>
                             </td>
