@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Instructor;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Services\CourseAnalyticsService;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class AnalyticsController extends Controller
@@ -14,7 +15,7 @@ class AnalyticsController extends Controller
     public function show(Course $course): View
     {
         // Analytics is instructor-private data; published visibility must not grant access.
-        $this->authorize('update', $course);
+        Gate::authorize('update', $course);
 
         $analytics = $this->analytics->summarize($course);
         $enrollments = $course->enrollments()
