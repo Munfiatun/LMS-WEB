@@ -145,6 +145,8 @@
                                 <td class="px-6 py-4 text-right">
                                     @if($latestAttempt?->status === 'in_progress')
                                         <a href="{{ route('student.quizzes.take', ['quiz' => $quiz, 'attempt' => $latestAttempt]) }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg transition-colors">Lanjutkan</a>
+                                    @elseif($latestAttempt?->status === 'expired')
+                                        <a href="{{ route('student.quizzes.result', ['quiz' => $quiz, 'attempt' => $latestAttempt]) }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold rounded-lg transition-colors">Lihat Hasil</a>
                                     @elseif($submitted->isNotEmpty())
                                         <div class="inline-flex items-center gap-2">
                                             <a href="{{ route('student.quizzes.result', ['quiz' => $quiz, 'attempt' => $submitted->last()]) }}" class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold rounded-lg transition-colors">Hasil Terbaru</a>
