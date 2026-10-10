@@ -128,7 +128,7 @@
                                     <div class="bg-emerald-500 h-2 rounded-full" style="width: {{ max(0, min(100, (float) $row['enrollment']->progress_percentage)) }}%"></div>
                                 </div>
                                 <div class="mt-2 flex justify-between text-xs text-slate-400">
-                                    <span>{{ number_format($row['enrollment']->progress_percentage, 0) }}% progres kursus</span>
+                                    <span>{{ number_format($row['enrollment']->progress_percentage, 0) }}% Selesai</span>
                                     <span>{{ $row['completed_materials'] }}/{{ $row['total_materials'] }} materi selesai</span>
                                 </div>
                             </div>
