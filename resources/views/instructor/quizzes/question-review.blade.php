@@ -41,6 +41,22 @@
             </div>
         @endif
 
+        @if(filled($question->source_excerpt))
+            <div class="mb-5 overflow-hidden rounded-xl border border-cyan-500/15 bg-cyan-500/[0.04]">
+                <div class="flex items-center justify-between gap-3 border-b border-cyan-500/10 px-4 py-2.5">
+                    <div class="flex items-center gap-2">
+                        <svg class="h-4 w-4 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                        <span class="text-[11px] font-bold uppercase tracking-[0.15em] text-cyan-200">Referensi Materi</span>
+                    </div>
+                    @if($question->source_slide_number)
+                        <span class="rounded-full border border-cyan-500/15 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-bold text-cyan-200">Slide {{ $question->source_slide_number }}</span>
+                    @endif
+                </div>
+                <blockquote class="px-4 py-3 text-xs leading-6 text-slate-300">“{{ $question->source_excerpt }}”</blockquote>
+                <p class="border-t border-cyan-500/10 px-4 py-2 text-[10px] leading-5 text-slate-500">Cuplikan ini disimpan dari slide yang dirujuk AI saat quiz dibuat, sehingga guru dapat membandingkan soal dengan materi sumber.</p>
+            </div>
+        @endif
+
         <form action="{{ route('instructor.questions.update', $question) }}" method="POST" class="space-y-5">
             @csrf
             @method('PUT')
