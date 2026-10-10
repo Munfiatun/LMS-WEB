@@ -132,7 +132,10 @@
     </div>
 
     <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl">
-        <h3 class="text-lg font-bold text-white mb-4">Daftar Pendaftar (Siswa)</h3>
+        <div class="mb-4">
+            <h3 class="text-lg font-bold text-white">Daftar Pendaftar (Siswa)</h3>
+            <p class="mt-1 text-xs text-slate-500">Buka detail siswa untuk melihat materi, assessment, dan rekomendasi tindak lanjut.</p>
+        </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -142,6 +145,7 @@
                         <th class="pb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Tanggal Daftar</th>
                         <th class="pb-3 text-xs font-bold uppercase tracking-wider text-slate-400 text-center">Progres</th>
                         <th class="pb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Status</th>
+                        <th class="pb-3 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/50">
@@ -176,10 +180,15 @@
                                     <span class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20">Sedang Belajar</span>
                                 @endif
                             </td>
+                            <td class="py-4 text-right">
+                                <a href="{{ route('instructor.courses.analytics.student', [$course, $enrollment->student]) }}" class="inline-flex items-center rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-xs font-bold text-indigo-200 transition-colors hover:bg-indigo-500/20">
+                                    Lihat Detail
+                                </a>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="py-8 text-center text-slate-500 text-sm">Belum ada siswa yang mendaftar ke kursus ini.</td>
+                            <td colspan="5" class="py-8 text-center text-slate-500 text-sm">Belum ada siswa yang mendaftar ke kursus ini.</td>
                         </tr>
                     @endforelse
                 </tbody>
