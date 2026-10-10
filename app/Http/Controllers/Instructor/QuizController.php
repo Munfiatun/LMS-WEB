@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Instructor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\Question;
 use App\Models\QuestionBank;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
@@ -68,8 +69,17 @@ class QuizController extends Controller
         $quiz->load(['quizQuestions.question.options', 'quizQuestions.question.questionBank', 'course']);
 
         $publicationErrors = $this->quizService->publicationErrors($quiz);
+        $questions = $quiz->quizQuestions->pluck('question');
+        $reviewStats = [
+            'total' => $questions->count(),
+            'pending' => $questions->where('needs_review', true)->count(),
+            'verified' => $questions->where('needs_review', false)->count(),
+            'explicit' => $questions->where('answer_source', Question::SOURCE_EXPLICIT)->count(),
+            'inferred' => $questions->where('answer_source', Question::SOURCE_INFERRED)->count(),
+            'manual' => $questions->where('answer_source', Question::SOURCE_MANUAL)->count(),
+        ];
 
-        return view('instructor.quizzes.show', compact('quiz', 'publicationErrors'));
+        return view('instructor.quizzes.show', compact('quiz', 'publicationErrors', 'reviewStats'));
     }
 
     public function builder(Quiz $quiz)
