@@ -43,6 +43,8 @@ class Question extends Model
         'question_text',
         'type',
         'topic',
+        'source_slide_number',
+        'source_excerpt',
         'difficulty',
         'explanation',
         'points',
@@ -58,6 +60,7 @@ class Question extends Model
     protected function casts(): array
     {
         return [
+            'source_slide_number' => 'integer',
             'points' => 'integer',
             'order' => 'integer',
             'needs_review' => 'boolean',
