@@ -29,7 +29,9 @@ class CourseAnalyticsService
             ->get();
 
         $submittedAttempts = $quizzes
-            ->flatMap(fn ($quiz) => $quiz->attempts)
+            ->flatMap(function ($quiz) {
+                return $quiz->attempts->each(fn (QuizAttempt $attempt) => $attempt->setRelation('quiz', $quiz));
+            })
             ->values();
 
         $passedAttempts = $submittedAttempts->filter(
@@ -71,7 +73,7 @@ class CourseAnalyticsService
             'completedStudents' => $enrollments->where('status', 'completed')->count(),
             'averageProgress' => round((float) ($enrollments->avg('progress_percentage') ?? 0), 1),
             'atRiskStudents' => $enrollments
-                ->whereIn('status', ['active'])
+                ->where('status', 'active')
                 ->filter(fn ($enrollment) => (float) $enrollment->progress_percentage < 50)
                 ->count(),
             'totalQuizzes' => $quizzes->count(),
