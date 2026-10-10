@@ -117,7 +117,9 @@
                         <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-5">
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <h4 class="text-lg font-bold text-white">{{ $row['course']->title }}</h4>
+                                    <h4 class="text-lg font-bold text-white">
+                                        <a href="{{ route('courses.show', $row['course']->slug) }}" class="hover:text-emerald-300 transition-colors">{{ $row['course']->title }}</a>
+                                    </h4>
                                     @if($row['enrollment']->status === 'completed')
                                         <span class="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-300">Tuntas</span>
                                     @endif
